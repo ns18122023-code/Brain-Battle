@@ -1,25 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import {
   selectCurrentQuestion,
   selectCurrentQuestionIndex,
-  selectTimeRemaining,
   selectQuestionStartTime,
-  selectGame,
-  setTimeRemaining,
-  decrementTimer
+  selectGame
 } from './gameSlice';
 import { selectAnsweredCount, selectPlayerCount } from '../player/playersSlice';
-import { Clock, Users, SkipForward } from 'lucide-react';
+import { Users, SkipForward } from 'lucide-react';
 import { soundFx } from '../../services/soundService';
 
 export default function HostQuestion({ onTimeExpired, onEndQuestionEarly }) {
-  const dispatch = useDispatch();
-
   const game = useSelector(selectGame);
   const currentQuestion = useSelector(selectCurrentQuestion);
   const questionIndex = useSelector(selectCurrentQuestionIndex);
-  const timeRemainingRedux = useSelector(selectTimeRemaining);
   const questionStartTime = useSelector(selectQuestionStartTime);
   const answeredCount = useSelector(selectAnsweredCount);
   const playerCount = useSelector(selectPlayerCount);
@@ -28,9 +22,11 @@ export default function HostQuestion({ onTimeExpired, onEndQuestionEarly }) {
   const totalTime = currentQuestion?.timeLimit || 20;
 
   const [displayTime, setDisplayTime] = useState(totalTime);
+  const hasExpiredRef = useRef(false);
 
   // Robust Timestamp-Based Countdown Effect
   useEffect(() => {
+    hasExpiredRef.current = false;
     const startTime = questionStartTime || Date.now();
 
     const updateTimer = () => {
@@ -38,27 +34,28 @@ export default function HostQuestion({ onTimeExpired, onEndQuestionEarly }) {
       const remaining = Math.max(0, totalTime - elapsedSec);
       
       setDisplayTime(remaining);
-      dispatch(setTimeRemaining(remaining));
 
       if (remaining <= 5 && remaining > 0) {
         soundFx.playTick();
       }
 
-      if (remaining === 0) {
-        onTimeExpired();
+      if (remaining === 0 && !hasExpiredRef.current) {
+        hasExpiredRef.current = true;
+        if (onTimeExpired) onTimeExpired();
       }
     };
 
-    updateTimer(); // Initial call
+    updateTimer();
     const interval = setInterval(updateTimer, 500);
 
     return () => clearInterval(interval);
-  }, [questionStartTime, totalTime, dispatch, onTimeExpired]);
+  }, [questionStartTime, totalTime, onTimeExpired]);
 
-  // Auto-expire question if all players have submitted answers
+  // Auto-expire question if all joined players have submitted answers
   useEffect(() => {
-    if (playerCount > 0 && answeredCount >= playerCount) {
-      onTimeExpired();
+    if (playerCount > 0 && answeredCount >= playerCount && !hasExpiredRef.current) {
+      hasExpiredRef.current = true;
+      if (onTimeExpired) onTimeExpired();
     }
   }, [answeredCount, playerCount, onTimeExpired]);
 

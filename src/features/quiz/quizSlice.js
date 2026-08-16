@@ -1,13 +1,34 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { INITIAL_QUIZZES } from '../../utils/sampleQuizzes';
 
-const LOCAL_STORAGE_KEY = 'quiz_battle_quizzes_v1';
+const LOCAL_STORAGE_KEY = 'quiz_battle_quizzes_v2';
 
-// Load initial quizzes from LocalStorage or default samples
+// Load initial quizzes from LocalStorage or default samples, merging any custom user quizzes
 const loadStoredQuizzes = () => {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const initialIds = new Set(INITIAL_QUIZZES.map(q => q.id));
+        const userCustomQuizzes = parsed.filter(q => !initialIds.has(q.id));
+        const merged = [...INITIAL_QUIZZES, ...userCustomQuizzes];
+        return merged;
+      }
+    }
+    // Check old v1 storage and preserve user created quizzes if any
+    const oldSaved = localStorage.getItem('quiz_battle_quizzes_v1');
+    if (oldSaved) {
+      const oldParsed = JSON.parse(oldSaved);
+      if (Array.isArray(oldParsed)) {
+        const oldDefaultIds = new Set(['quiz-react-redux', 'quiz-world-trivia', 'quiz-tech-mastery', 'quiz-general-knowledge-world', 'quiz-science-cosmos', 'quiz-pop-culture-legends']);
+        const userCustomQuizzes = oldParsed.filter(q => !oldDefaultIds.has(q.id));
+        const merged = [...INITIAL_QUIZZES, ...userCustomQuizzes];
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(merged));
+        return merged;
+      }
+    }
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(INITIAL_QUIZZES));
   } catch (e) {}
   return INITIAL_QUIZZES;
 };
