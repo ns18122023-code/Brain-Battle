@@ -22,6 +22,8 @@ export const submitAnswerThunk = createAsyncThunk(
         score: player.score + totalAdded,
         streak: newStreak,
         lastPoints: totalAdded,
+        lastBasePoints: pointsEarned,
+        lastStreakBonus: streakBonus,
         lastAnswerIndex: optionIndex,
         isCorrect: isCorrect,
         answeredCurrentQuestion: true,
@@ -54,18 +56,35 @@ const playersSlice = createSlice({
         score: 0,
         streak: 0,
         lastPoints: 0,
+        lastBasePoints: 0,
+        lastStreakBonus: 0,
         lastAnswerIndex: null,
         isCorrect: null,
         answeredCurrentQuestion: false,
-        answerTimeRemaining: null
+        answerTimeRemaining: null,
+        previousRank: null,
+        isReady: false
       };
     },
     resetQuestionState: (state) => {
+      // Calculate current ranks before resetting
+      const sortedPlayers = Object.values(state.players || {}).sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return b.streak - a.streak;
+      });
+      const ranks = {};
+      sortedPlayers.forEach((p, idx) => {
+        ranks[p.id] = idx + 1;
+      });
+
       Object.keys(state.players).forEach((id) => {
+        state.players[id].previousRank = ranks[id] || null;
         state.players[id].lastAnswerIndex = null;
         state.players[id].isCorrect = null;
         state.players[id].answeredCurrentQuestion = false;
         state.players[id].lastPoints = 0;
+        state.players[id].lastBasePoints = 0;
+        state.players[id].lastStreakBonus = 0;
         state.players[id].answerTimeRemaining = null;
       });
     },
@@ -76,6 +95,12 @@ const playersSlice = createSlice({
     syncPlayersFromExternal: (state, action) => {
       if (action.payload) {
         state.players = action.payload;
+      }
+    },
+    togglePlayerReady: (state, action) => {
+      const playerId = action.payload;
+      if (state.players[playerId]) {
+        state.players[playerId].isReady = !state.players[playerId].isReady;
       }
     }
   },
@@ -92,7 +117,8 @@ export const {
   addPlayer,
   resetQuestionState,
   resetAllPlayers,
-  syncPlayersFromExternal
+  syncPlayersFromExternal,
+  togglePlayerReady
 } = playersSlice.actions;
 
 // Selectors
