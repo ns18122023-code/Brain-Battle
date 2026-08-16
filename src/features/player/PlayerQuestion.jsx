@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectCurrentQuestion, selectTimeRemaining, selectCurrentQuestionIndex, selectGame } from '../game/gameSlice';
+import { selectCurrentQuestion, selectTimeRemaining, selectQuestionStartTime, selectCurrentQuestionIndex, selectGame } from '../game/gameSlice';
 import { selectCurrentPlayer, submitAnswerThunk } from './playersSlice';
 import { Clock, CheckCircle } from 'lucide-react';
 import { soundFx } from '../../services/soundService';
@@ -11,8 +11,24 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
   const game = useSelector(selectGame);
   const currentQuestion = useSelector(selectCurrentQuestion);
   const questionIndex = useSelector(selectCurrentQuestionIndex);
-  const timeRemaining = useSelector(selectTimeRemaining);
+  const timeRemainingRedux = useSelector(selectTimeRemaining);
+  const questionStartTime = useSelector(selectQuestionStartTime);
   const player = useSelector(selectCurrentPlayer);
+
+  const totalTime = currentQuestion?.timeLimit || 20;
+  const [displayTime, setDisplayTime] = useState(totalTime);
+
+  useEffect(() => {
+    const startTime = questionStartTime || Date.now();
+    const updateTimer = () => {
+      const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = Math.max(0, totalTime - elapsedSec);
+      setDisplayTime(remaining);
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 500);
+    return () => clearInterval(interval);
+  }, [questionStartTime, totalTime]);
 
   if (!currentQuestion) return null;
 
@@ -28,8 +44,8 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
       submitAnswerThunk({
         playerId: player.id,
         optionIndex: index,
-        timeRemaining,
-        totalTime: currentQuestion.timeLimit || 20,
+        timeRemaining: displayTime,
+        totalTime,
         isCorrect
       })
     ).then(() => {
@@ -55,7 +71,7 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
         </span>
 
         <div className="flex items-center gap-1.5 font-bold text-amber-300 text-sm">
-          <Clock className="w-4 h-4" /> {timeRemaining}s Left
+          <Clock className="w-4 h-4" /> {displayTime}s Left
         </div>
       </div>
 
