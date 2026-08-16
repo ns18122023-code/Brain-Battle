@@ -3,7 +3,6 @@ import { INITIAL_QUIZZES } from '../../utils/sampleQuizzes';
 import { saveQuizToFirebase, deleteQuizFromFirebase, getAllQuizzesFromFirebase } from '../../services/firebaseQuizService';
 
 const LOCAL_STORAGE_KEY = 'quiz_battle_quizzes_v2';
-
 const INITIAL_QUIZ_IDS = new Set(INITIAL_QUIZZES.map(q => q.id));
 
 // Helper to merge INITIAL_QUIZZES with any custom user or Firebase quizzes (no duplicates)
@@ -78,7 +77,7 @@ export const saveQuizAsync = createAsyncThunk(
 
       // Save to localStorage
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedQuizzes));
-      
+
       // Try to save to Firebase (async, don't wait)
       saveQuizToFirebase(quizData).catch(err =>
         console.warn('Could not save quiz to Firebase:', err.message)
@@ -98,10 +97,10 @@ export const deleteQuizAsync = createAsyncThunk(
     try {
       const state = getState().quiz;
       const updated = state.quizzes.filter(q => q.id !== quizId);
-      
+
       // Update localStorage
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
-      
+
       // Try to delete from Firebase (async, don't wait)
       deleteQuizFromFirebase(quizId).catch(err =>
         console.warn('Could not delete quiz from Firebase:', err.message)

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import Navbar from './components/Navbar';
+import quizBg from './assets/quiz_bg.png';
 
 // Quiz Slices
 import { selectAllQuizzes, fetchQuizzes } from './features/quiz/quizSlice';
@@ -212,20 +213,67 @@ export default function App() {
     return () => unsubscribe();
   }, [gamePin, dispatch]);
 
-  // 1b. Auto-reconnect player if session exists in localStorage and matches queryPin
+  // Helper to clear active session storage
+  const clearActiveSession = () => {
+    try {
+      sessionStorage.removeItem('quiz_battle_active_session');
+      sessionStorage.removeItem('quiz_battle_game_pin');
+      sessionStorage.removeItem('quiz_battle_player_id');
+      localStorage.removeItem('quiz_battle_active_session');
+      localStorage.removeItem('quiz_battle_game_pin');
+      localStorage.removeItem('quiz_battle_player_id');
+    } catch (e) {}
+  };
+
+  // 1b. Smart Session Persistence: Auto-resume active game on page reload for both Host and Player (Tab Isolated)
   useEffect(() => {
-    if (queryPin) {
-      const savedPin = localStorage.getItem('quiz_battle_game_pin');
-      const savedPlayerId = localStorage.getItem('quiz_battle_player_id');
-      
-      if (savedPin === queryPin && savedPlayerId) {
-        // Restore player ID in Redux
-        dispatch(setCurrentPlayer(savedPlayerId));
-        // Set gamePin in Redux to trigger subscription
-        dispatch(updateGameFromSync({ gamePin: queryPin }));
+    try {
+      const activeSessionRaw = sessionStorage.getItem('quiz_battle_active_session') || localStorage.getItem('quiz_battle_active_session');
+      if (activeSessionRaw) {
+        const activeSession = JSON.parse(activeSessionRaw);
+
+        if (activeSession && activeSession.gamePin) {
+          const cachedStateRaw = localStorage.getItem(`quiz_battle_state_${activeSession.gamePin}`);
+          const cachedState = cachedStateRaw ? JSON.parse(cachedStateRaw) : null;
+
+          // Check if session is still active (not finished / PODIUM)
+          if (cachedState && cachedState.status && cachedState.status !== 'PODIUM') {
+            // Restore Host active session
+            if (activeSession.role === 'HOST') {
+              dispatch(setGameSession({
+                gamePin: activeSession.gamePin,
+                quiz: cachedState.quiz
+              }));
+              dispatch(updateGameFromSync(cachedState));
+              setAppMode('HOST_GAME');
+              console.log('🔄 Resumed active Host session for Game PIN:', activeSession.gamePin);
+              return;
+            }
+
+            // Restore Player active session
+            if (activeSession.role === 'PLAYER' && activeSession.playerId) {
+              dispatch(setCurrentPlayer(activeSession.playerId));
+              dispatch(updateGameFromSync({
+                gamePin: activeSession.gamePin,
+                quiz: cachedState.quiz,
+                status: cachedState.status,
+                currentQuestionIndex: cachedState.currentQuestionIndex,
+                questionStartTime: cachedState.questionStartTime
+              }));
+              setAppMode('PLAYER');
+              console.log('🔄 Resumed active Player session for Game PIN:', activeSession.gamePin);
+              return;
+            }
+          } else {
+            // Session was completed or stale -> clear it
+            clearActiveSession();
+          }
+        }
       }
+    } catch (e) {
+      console.warn('Could not restore session:', e);
     }
-  }, [queryPin, dispatch]);
+  }, [dispatch]);
 
   // Helper to construct clean reset players map for new questions
   const getResetPlayersMap = (currentMap) => {
@@ -268,6 +316,16 @@ export default function App() {
     dispatch(setGameSession({ gamePin: generatedPin, quiz }));
     dispatch(resetAllPlayers());
     setAppMode('HOST_GAME');
+
+    // Save tab-isolated active session for Host persistence
+    try {
+      const sessionData = JSON.stringify({
+        role: 'HOST',
+        gamePin: generatedPin,
+        appMode: 'HOST_GAME'
+      });
+      sessionStorage.setItem('quiz_battle_active_session', sessionData);
+    } catch (e) {}
 
     // Publish initial lobby state
     publishGameSync(generatedPin, {
@@ -334,9 +392,18 @@ export default function App() {
   const handlePlayerJoined = (enteredPin, playerData) => {
     dispatch(addPlayer(playerData));
     
-    // Save player ID and PIN to localStorage for session persistence
-    localStorage.setItem('quiz_battle_player_id', playerData.id);
-    localStorage.setItem('quiz_battle_game_pin', enteredPin);
+    // Save tab-isolated player ID, PIN, and active session to sessionStorage for session persistence
+    try {
+      const sessionData = JSON.stringify({
+        role: 'PLAYER',
+        gamePin: enteredPin,
+        appMode: 'PLAYER',
+        playerId: playerData.id
+      });
+      sessionStorage.setItem('quiz_battle_active_session', sessionData);
+      sessionStorage.setItem('quiz_battle_player_id', playerData.id);
+      sessionStorage.setItem('quiz_battle_game_pin', enteredPin);
+    } catch (e) {}
     
     // Dispatch gamePin to Redux so player starts syncing immediately
     dispatch(updateGameFromSync({ gamePin: enteredPin }));
@@ -408,12 +475,32 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans">
-      <Navbar
-        activeMode={appMode}
-        onSwitchMode={(mode) => setAppMode(mode)}
-        onLaunchDemo={handleLaunchQuickDemo}
+    <div className="min-h-screen flex flex-col text-slate-100 font-sans relative overflow-x-hidden bg-slate-950">
+      {/* Fixed Blurred Quiz Background Image Layer */}
+      <div 
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.6), rgba(3, 7, 18, 0.82)), url(${quizBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          filter: 'blur(7px) brightness(95%) contrast(110%)',
+          transform: 'scale(1.05)'
+        }}
       />
+
+      <div className="relative z-10 flex flex-col flex-1">
+        <Navbar
+          activeMode={appMode}
+          onSwitchMode={(mode) => {
+            if (mode === 'HOST_DASHBOARD' || mode === 'PLAYER') {
+              clearActiveSession();
+              dispatch(resetGameSession());
+            }
+            setAppMode(mode);
+          }}
+          onLaunchDemo={handleLaunchQuickDemo}
+        />
 
       <main className="flex-1">
         {/* MODE 1: HOST DASHBOARD (Quiz List) */}
@@ -468,6 +555,7 @@ export default function App() {
                   if (game.quiz) handleStartHostSession(game.quiz);
                 }}
                 onBackHome={() => {
+                  clearActiveSession();
                   dispatch(resetGameSession());
                   setAppMode('HOST_DASHBOARD');
                 }}
@@ -498,10 +586,10 @@ export default function App() {
                 {gameStatus === 'PODIUM' && (
                   <PlayerPodium
                     onPlayAgain={() => {
-                      // Clear player session on game exit / restart
-                      localStorage.removeItem('quiz_battle_player_id');
-                      localStorage.removeItem('quiz_battle_game_pin');
+                      clearActiveSession();
                       dispatch(resetAllPlayers());
+                      dispatch(resetGameSession());
+                      setAppMode('PLAYER');
                       window.location.href = window.location.pathname;
                     }}
                   />
@@ -511,6 +599,7 @@ export default function App() {
           </>
         )}
       </main>
+      </div>
     </div>
   );
 }
