@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --kahoot-purple: #46178f;
+    --kahoot-purple-dark: #2c0e5d;
+    --kahoot-red: #e21b3c;
+    --kahoot-blue: #1368ce;
+    --kahoot-yellow: #d89e00;
+    --kahoot-green: #26890c;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans min-h-screen overflow-x-hidden selection:bg-purple-500 selection:text-white;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(70, 23, 143, 0.35) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(19, 104, 206, 0.3) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(226, 27, 60, 0.25) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* Glassmorphism utility classes */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-input {
+  background: rgba(15, 23, 42, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.glass-input:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  outline: none;
+}
+
+/* Kahoot Shape Button Styling */
+.kahoot-btn-red {
+  background: linear-gradient(135deg, #e21b3c 0%, #b9132c 100%);
+  box-shadow: 0 6px 0 #870b1e, 0 12px 20px rgba(226, 27, 60, 0.4);
+}
+
+.kahoot-btn-red:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #870b1e, 0 4px 10px rgba(226, 27, 60, 0.4);
+}
+
+.kahoot-btn-blue {
+  background: linear-gradient(135deg, #1368ce 0%, #0d4ca1 100%);
+  box-shadow: 0 6px 0 #08336e, 0 12px 20px rgba(19, 104, 206, 0.4);
+}
+
+.kahoot-btn-blue:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #08336e, 0 4px 10px rgba(19, 104, 206, 0.4);
+}
+
+.kahoot-btn-yellow {
+  background: linear-gradient(135deg, #d89e00 0%, #a87900 100%);
+  box-shadow: 0 6px 0 #735300, 0 12px 20px rgba(216, 158, 0, 0.4);
+}
+
+.kahoot-btn-yellow:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #735300, 0 4px 10px rgba(216, 158, 0, 0.4);
+}
+
+.kahoot-btn-green {
+  background: linear-gradient(135deg, #26890c 0%, #1a6307 100%);
+  box-shadow: 0 6px 0 #104203, 0 12px 20px rgba(38, 137, 12, 0.4);
+}
+
+.kahoot-btn-green:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #104203, 0 4px 10px rgba(38, 137, 12, 0.4);
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.03); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+@keyframes podiumRaise {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-podium {
+  animation: podiumRaise 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.4);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.7);
+}
