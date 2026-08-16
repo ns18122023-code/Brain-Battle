@@ -4,13 +4,15 @@ import { saveQuizToFirebase, deleteQuizFromFirebase, getAllQuizzesFromFirebase }
 
 const LOCAL_STORAGE_KEY = 'quiz_battle_quizzes_v2';
 
+const INITIAL_QUIZ_IDS = new Set(INITIAL_QUIZZES.map(q => q.id));
+
 // Helper to merge INITIAL_QUIZZES with any custom user or Firebase quizzes (no duplicates)
 const mergeWithInitialQuizzes = (fetchedQuizzes) => {
   const map = new Map();
   INITIAL_QUIZZES.forEach(q => map.set(q.id, q));
   if (Array.isArray(fetchedQuizzes)) {
     fetchedQuizzes.forEach(q => {
-      if (q && q.id) {
+      if (q && q.id && !INITIAL_QUIZ_IDS.has(q.id)) {
         map.set(q.id, q);
       }
     });
