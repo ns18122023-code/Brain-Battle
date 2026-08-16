@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import Navbar from './components/Navbar';
 
 // Quiz Slices
-import { selectAllQuizzes } from './features/quiz/quizSlice';
+import { selectAllQuizzes, fetchQuizzes } from './features/quiz/quizSlice';
 import QuizList from './features/quiz/QuizList';
 import QuizBuilder from './features/quiz/QuizBuilder';
 
@@ -67,6 +67,17 @@ export default function App() {
   const stateRef = useRef({});
   stateRef.current = { appMode, gameStatus, game, playersMap };
 
+  // 0. Initialize Firebase & Load Quizzes on App Mount
+  useEffect(() => {
+    console.log('🚀 Initializing Brain Battle App...');
+    console.log('📱 Current Mode:', appMode);
+    
+    // Load quizzes from Firebase (with localStorage fallback)
+    dispatch(fetchQuizzes()).catch(err => 
+      console.error('Failed to load quizzes:', err.message)
+    );
+  }, []);
+
   // 1. Subscribe to Real-Time Data Sync over ntfy.sh + Firebase + BroadcastChannel
   useEffect(() => {
     if (!gamePin) return;
@@ -102,15 +113,84 @@ export default function App() {
         return;
       }
 
-      // If current client is Host, only sync player changes from clients and never downgrade host status
-      if (currentAppMode === 'HOST_GAME') {
-        if (syncedData.playersMap) {
-          dispatch(syncPlayersFromExternal(syncedData.playersMap));
+      // Handle Event: Player Submitted Answer
+      if (syncedData.type === 'PLAYER_ANSWER_SUBMITTED' && syncedData.playerId && syncedData.playerData) {
+        if (currentAppMode === 'HOST_GAME') {
+          dispatch(syncPlayersFromExternal({
+            [syncedData.playerId]: syncedData.playerData
+          }));
+
+          setTimeout(() => {
+            const updatedMap = {
+              ...stateRef.current.playersMap,
+              [syncedData.playerId]: syncedData.playerData
+            };
+            publishGameSync(gamePin, {
+              type: 'SYNC_FULL_STATE',
+              gamePin,
+              status: currentStatus,
+              quiz: currentGame.quiz,
+              currentQuestionIndex: currentGame.currentQuestionIndex,
+              questionStartTime: currentGame.questionStartTime,
+              timeRemaining: currentGame.timeRemaining,
+              isTimerActive: currentGame.isTimerActive,
+              playersMap: updatedMap
+            });
+          }, 100);
         }
         return;
       }
 
-      // Update Redux Game state for Players
+      // Handle Event: Player Ready Toggled
+      if (syncedData.type === 'PLAYER_READY_TOGGLED' && syncedData.playerId) {
+        if (currentAppMode === 'HOST_GAME') {
+          const updatedPlayer = {
+            ...currentPlayers[syncedData.playerId],
+            isReady: syncedData.isReady
+          };
+          dispatch(syncPlayersFromExternal({
+            [syncedData.playerId]: updatedPlayer
+          }));
+
+          setTimeout(() => {
+            const updatedMap = {
+              ...stateRef.current.playersMap,
+              [syncedData.playerId]: updatedPlayer
+            };
+            publishGameSync(gamePin, {
+              type: 'SYNC_FULL_STATE',
+              gamePin,
+              status: currentStatus,
+              quiz: currentGame.quiz,
+              currentQuestionIndex: currentGame.currentQuestionIndex,
+              questionStartTime: currentGame.questionStartTime,
+              timeRemaining: currentGame.timeRemaining,
+              isTimerActive: currentGame.isTimerActive,
+              playersMap: updatedMap
+            });
+          }, 100);
+        }
+        return;
+      }
+
+      // If Host, ignore SYNC_FULL_STATE from other clients to prevent state corruption
+      if (syncedData.type === 'SYNC_FULL_STATE' && currentAppMode === 'HOST_GAME') {
+        return;
+      }
+
+      // If current client is Host and has playersMap sync, update from external sync
+      if (currentAppMode === 'HOST_GAME' && syncedData.playersMap) {
+        dispatch(syncPlayersFromExternal(syncedData.playersMap));
+      }
+
+      // If question index changed for a question state, reset player answered status locally
+      if (syncedData.status === 'QUESTION' && syncedData.currentQuestionIndex !== undefined) {
+        if (stateRef.current.game.currentQuestionIndex !== syncedData.currentQuestionIndex) {
+          dispatch(resetQuestionState());
+        }
+      }
+
+      // Update Redux Game state
       dispatch(updateGameFromSync(syncedData));
 
       // Update Redux Players state
@@ -136,6 +216,24 @@ export default function App() {
       }
     }
   }, [queryPin, dispatch]);
+
+  // Helper to construct clean reset players map for new questions
+  const getResetPlayersMap = (currentMap) => {
+    const cleanMap = {};
+    Object.keys(currentMap || {}).forEach((id) => {
+      cleanMap[id] = {
+        ...currentMap[id],
+        answeredCurrentQuestion: false,
+        lastAnswerIndex: null,
+        isCorrect: null,
+        lastPoints: 0,
+        lastBasePoints: 0,
+        lastStreakBonus: 0,
+        answerTimeRemaining: null
+      };
+    });
+    return cleanMap;
+  };
 
   // Helper to publish Redux state updates to real-time sync channel
   const syncToCloud = (extraPayload = {}) => {
@@ -176,13 +274,14 @@ export default function App() {
     dispatch(resetQuestionState());
     dispatch(startQuestion(0));
     const now = Date.now();
+    const cleanMap = getResetPlayersMap(playersMap);
     const nextState = {
       type: 'SYNC_FULL_STATE',
       status: 'QUESTION',
       currentQuestionIndex: 0,
       questionStartTime: now,
       quiz: game.quiz,
-      playersMap
+      playersMap: cleanMap
     };
     syncToCloud(nextState);
   };
@@ -204,10 +303,15 @@ export default function App() {
     // Check if game reached podium or next question
     const nextIndex = game.currentQuestionIndex + 1;
     if (nextIndex < (game.quiz?.questions?.length || 0)) {
+      const now = Date.now();
+      const cleanMap = getResetPlayersMap(playersMap);
       const nextState = {
+        type: 'SYNC_FULL_STATE',
         status: 'QUESTION',
         currentQuestionIndex: nextIndex,
-        playersMap
+        questionStartTime: now,
+        quiz: game.quiz,
+        playersMap: cleanMap
       };
       syncToCloud(nextState);
     } else {
@@ -235,27 +339,31 @@ export default function App() {
     });
   };
 
-  const handlePlayerAnswerSubmitted = () => {
-    // Sync answer submission back to host real-time layer
-    setTimeout(() => {
-      syncToCloud();
-    }, 100);
+  const handlePlayerAnswerSubmitted = (updatedPlayerData) => {
+    if (currentPlayer && gamePin && updatedPlayerData) {
+      publishGameSync(gamePin, {
+        type: 'PLAYER_ANSWER_SUBMITTED',
+        gamePin,
+        playerId: currentPlayer.id,
+        playerData: updatedPlayerData
+      });
+    }
   };
-
+ 
   const handlePlayerToggleReady = () => {
     if (currentPlayer && gamePin) {
-      const updatedPlayers = {
-        ...playersMap,
-        [currentPlayer.id]: {
-          ...playersMap[currentPlayer.id],
-          isReady: !playersMap[currentPlayer.id]?.isReady
-        }
-      };
+      const isReady = !playersMap[currentPlayer.id]?.isReady;
       
       // Toggle locally
       dispatch(togglePlayerReady(currentPlayer.id));
-      // Publish to cloud
-      publishGameSync(gamePin, { playersMap: updatedPlayers });
+      
+      // Publish event to cloud
+      publishGameSync(gamePin, {
+        type: 'PLAYER_READY_TOGGLED',
+        gamePin,
+        playerId: currentPlayer.id,
+        isReady
+      });
     }
   };
 

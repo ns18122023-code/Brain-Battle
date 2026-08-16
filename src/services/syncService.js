@@ -20,6 +20,7 @@ function getBroadcastChannel(gamePin) {
 // ==========================================
 // PUBLISH GAME DATA
 // ==========================================
+
 /**
  * Publish game update to ntfy.sh (Cross-Device Cloud Relay), Firebase Firestore, and BroadcastChannel
  */
@@ -71,6 +72,7 @@ export async function publishGameSync(gamePin, payload) {
 // ==========================================
 // SUBSCRIBE TO GAME DATA
 // ==========================================
+
 /**
  * Subscribe to Game updates from ntfy.sh, Firebase Firestore, BroadcastChannel & LocalStorage
  */

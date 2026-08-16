@@ -38,7 +38,7 @@ export default function HostLobby({ onStartGame }) {
             <Sparkles className="w-4 h-4 text-amber-400" /> Host Game Lobby
           </span>
           <h2 className="text-xl md:text-2xl font-bold text-slate-300">
-            Join at <span className="text-white font-extrabold underline decoration-purple-500">Kahoot Battle</span> or scan QR code
+            Join at <span className="text-white font-extrabold underline decoration-purple-500">Brain Battle</span> or scan QR code
           </h2>
         </div>
 

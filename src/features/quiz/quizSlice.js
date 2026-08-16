@@ -4,33 +4,33 @@ import { saveQuizToFirebase, deleteQuizFromFirebase, getAllQuizzesFromFirebase }
 
 const LOCAL_STORAGE_KEY = 'quiz_battle_quizzes_v2';
 
+const INITIAL_QUIZ_IDS = new Set(INITIAL_QUIZZES.map(q => q.id));
+
+// Helper to merge INITIAL_QUIZZES with any custom user or Firebase quizzes (no duplicates)
+const mergeWithInitialQuizzes = (fetchedQuizzes) => {
+  const map = new Map();
+  INITIAL_QUIZZES.forEach(q => map.set(q.id, q));
+  if (Array.isArray(fetchedQuizzes)) {
+    fetchedQuizzes.forEach(q => {
+      if (q && q.id && !INITIAL_QUIZ_IDS.has(q.id)) {
+        map.set(q.id, q);
+      }
+    });
+  }
+  return Array.from(map.values());
+};
+
 // Load initial quizzes from LocalStorage or default samples, merging any custom user quizzes
 const loadStoredQuizzes = () => {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const initialIds = new Set(INITIAL_QUIZZES.map(q => q.id));
-        const userCustomQuizzes = parsed.filter(q => !initialIds.has(q.id));
-        const merged = [...INITIAL_QUIZZES, ...userCustomQuizzes];
-        return merged;
+      if (Array.isArray(parsed)) {
+        return mergeWithInitialQuizzes(parsed);
       }
     }
-    // Check old v1 storage and preserve user created quizzes if any
-    const oldSaved = localStorage.getItem('quiz_battle_quizzes_v1');
-    if (oldSaved) {
-      const oldParsed = JSON.parse(oldSaved);
-      if (Array.isArray(oldParsed)) {
-        const oldDefaultIds = new Set(['quiz-react-redux', 'quiz-world-trivia', 'quiz-tech-mastery', 'quiz-general-knowledge-world', 'quiz-science-cosmos', 'quiz-pop-culture-legends']);
-        const userCustomQuizzes = oldParsed.filter(q => !oldDefaultIds.has(q.id));
-        const merged = [...INITIAL_QUIZZES, ...userCustomQuizzes];
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(merged));
-        return merged;
-      }
-    }
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(INITIAL_QUIZZES));
-  } catch (e) { }
+  } catch (e) {}
   return INITIAL_QUIZZES;
 };
 
@@ -41,34 +41,22 @@ export const fetchQuizzes = createAsyncThunk(
     try {
       // Try to fetch from Firebase first
       const firebaseQuizzes = await getAllQuizzesFromFirebase();
+      let rawQuizzes = [];
 
       if (firebaseQuizzes && firebaseQuizzes.length > 0) {
         console.log('📚 Loaded quizzes from Firebase');
-        // Also sync to localStorage for offline access
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(firebaseQuizzes));
-        return firebaseQuizzes;
+        rawQuizzes = firebaseQuizzes;
+      } else {
+        console.log('📚 Loaded quizzes from localStorage');
+        rawQuizzes = loadStoredQuizzes();
       }
 
-      // Fallback to localStorage
-      console.log('📚 Loaded quizzes from localStorage');
-      const localQuizzes = loadStoredQuizzes();
-
-      // If we have quizzes, try to sync them to Firebase
-      if (localQuizzes.length > 0) {
-        setTimeout(() => {
-          localQuizzes.forEach(quiz => {
-            saveQuizToFirebase(quiz).catch(err =>
-              console.warn('Could not sync quiz to Firebase:', err.message)
-            );
-          });
-        }, 1000);
-      }
-
-      return localQuizzes;
+      const mergedQuizzes = mergeWithInitialQuizzes(rawQuizzes);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(mergedQuizzes));
+      return mergedQuizzes;
     } catch (err) {
       console.error('Error fetching quizzes:', err.message);
-      // Last resort: return localStorage data
-      return loadStoredQuizzes();
+      return mergeWithInitialQuizzes(loadStoredQuizzes());
     }
   }
 );
@@ -90,7 +78,7 @@ export const saveQuizAsync = createAsyncThunk(
 
       // Save to localStorage
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedQuizzes));
-
+      
       // Try to save to Firebase (async, don't wait)
       saveQuizToFirebase(quizData).catch(err =>
         console.warn('Could not save quiz to Firebase:', err.message)
@@ -110,10 +98,10 @@ export const deleteQuizAsync = createAsyncThunk(
     try {
       const state = getState().quiz;
       const updated = state.quizzes.filter(q => q.id !== quizId);
-
+      
       // Update localStorage
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
-
+      
       // Try to delete from Firebase (async, don't wait)
       deleteQuizFromFirebase(quizId).catch(err =>
         console.warn('Could not delete quiz from Firebase:', err.message)
@@ -150,7 +138,7 @@ const quizSlice = createSlice({
       })
       .addCase(fetchQuizzes.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.quizzes = action.payload;
+        state.quizzes = mergeWithInitialQuizzes(action.payload);
       })
       .addCase(fetchQuizzes.rejected, (state, action) => {
         state.status = 'failed';

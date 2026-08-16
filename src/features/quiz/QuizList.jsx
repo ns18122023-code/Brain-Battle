@@ -41,7 +41,7 @@ export default function QuizList({ onCreateNew, onEditQuiz, onStartGame }) {
             <Sparkles className="w-4 h-4 text-amber-400" /> Host Dashboard
           </span>
           <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-            Select or Create a <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-pink-500">Quiz Battle</span>
+            Select or Create a <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-pink-500">Brain Battle</span>
           </h1>
           <p className="text-slate-300 text-base">
             Launch a live multiplayer game with custom questions, speed-based scoring, and real-time leaderboards.
@@ -124,7 +124,7 @@ export default function QuizList({ onCreateNew, onEditQuiz, onStartGame }) {
                 <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors line-clamp-1">
                   {quiz.title}
                 </h3>
-                <p className="text-slate-400 text-sm line-clamp-2 min-h-[40px]">
+                <p className="text-slate-400 text-sm line-clamp-2 min-h-10">
                   {quiz.description || 'No description provided.'}
                 </p>
               </div>

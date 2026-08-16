@@ -31,16 +31,12 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
     return () => clearInterval(interval);
   }, [questionStartTime, totalTime]);
 
-  if (!currentQuestion) return null;
-
-  const percentage = (displayTime / totalTime) * 100;
-
   const handleSelectOption = (index) => {
     if (!player || player.answeredCurrentQuestion) return;
 
     soundFx.playSelect();
 
-    const selectedOption = currentQuestion.options[index];
+    const selectedOption = currentQuestion?.options?.[index];
     const isCorrect = Boolean(selectedOption?.isCorrect);
 
     dispatch(
@@ -51,8 +47,10 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
         totalTime,
         isCorrect
       })
-    ).then(() => {
-      if (onAnswerSubmitted) onAnswerSubmitted();
+    ).then((resultAction) => {
+      if (submitAnswerThunk.fulfilled.match(resultAction)) {
+        if (onAnswerSubmitted) onAnswerSubmitted(resultAction.payload);
+      }
     });
   };
 
@@ -76,6 +74,10 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [player, hasAnswered, currentQuestion, displayTime]);
+
+  if (!currentQuestion) return null;
+
+  const percentage = (displayTime / totalTime) * 100;
 
   const optionStyles = [
     { name: 'Red', bg: 'kahoot-btn-red', icon: '▲' },
