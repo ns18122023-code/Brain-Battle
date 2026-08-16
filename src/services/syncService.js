@@ -102,24 +102,15 @@ export async function publishGameSync(gamePin, payload) {
   }
 }
 
-<<<<<<< HEAD
-=======
 // ==========================================
 // SUBSCRIBE TO GAME DATA
 // ==========================================
 
->>>>>>> 866b1742be63a6a122d10272f3404b9a0fbcf860
 /**
  * Subscribe to Game updates from ntfy.sh, Firebase Firestore, BroadcastChannel & LocalStorage
  */
 export function subscribeToGameSync(gamePin, onUpdateCallback) {
-<<<<<<< HEAD
   if (!gamePin) return () => {};
-=======
-  if (!gamePin) {
-    return () => {};
-  }
->>>>>>> 866b1742be63a6a122d10272f3404b9a0fbcf860
 
   const unsubscribes = [];
 
@@ -178,53 +169,6 @@ export function subscribeToGameSync(gamePin, onUpdateCallback) {
     );
   });
 
-<<<<<<< HEAD
-    if (
-      event.key ===
-        `quiz_battle_state_${gamePin}` &&
-      event.newValue
-    ) {
-
-      try {
-
-        const parsed = JSON.parse(
-          event.newValue
-        );
-
-        console.log(
-          "localStorage update:",
-          parsed
-        );
-
-        onUpdateCallback(parsed);
-
-      } catch (error) {
-
-        console.warn(
-          "Could not parse localStorage data"
-        );
-
-      }
-
-    }
-
-  };
-
-  window.addEventListener(
-    "storage",
-    handleStorage
-  );
-
-  unsubscribes.push(() => {
-
-    window.removeEventListener(
-      "storage",
-      handleStorage
-    );
-
-  });
-
-
   // 3. Listen to ntfy.sh Global Cloud Relay SSE (Server-Sent Events) for real-time mobile/cross-device sync
   try {
     const sseUrl = `https://ntfy.sh/quiz_battle_pin_${gamePin}/json`;
@@ -236,47 +180,6 @@ export function subscribeToGameSync(gamePin, onUpdateCallback) {
         if (data.event === 'message' && data.message) {
           const payload = JSON.parse(data.message);
           console.log("ntfy.sh update:", payload);
-          onUpdateCallback(payload);
-        }
-      } catch (e) {}
-    };
-
-    unsubscribes.push(() => {
-      try {
-        eventSource.close();
-      } catch (e) {}
-    });
-  } catch (e) {
-    console.warn("ntfy subscription error:", e.message);
-  }
-
-  // 4. Listen to Firebase Firestore `onSnapshot` (if configured)
-  if (isFirebaseReady && db) {
-    try {
-      const gameRef = doc(db, 'games', String(gamePin));
-      const unsubFs = onSnapshot(gameRef, (docSnap) => {
-        if (docSnap.exists()) {
-          console.log("Firebase update:", docSnap.data());
-          onUpdateCallback(docSnap.data());
-        }
-      }, (error) => {
-        console.warn("Firestore snapshot listener note:", error.message);
-      });
-      unsubscribes.push(unsubFs);
-    } catch (e) {
-      console.warn("Firestore subscription error:", e.message);
-    }
-=======
-  // 3. Listen to ntfy.sh Global Cloud Relay SSE (Server-Sent Events) for real-time mobile/cross-device sync
-  try {
-    const sseUrl = `https://ntfy.sh/quiz_battle_pin_${gamePin}/json`;
-    const eventSource = new EventSource(sseUrl);
-
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.event === 'message' && data.message) {
-          const payload = JSON.parse(data.message);
           onUpdateCallback(payload);
         }
       } catch (e) {}
@@ -315,7 +218,6 @@ export function subscribeToGameSync(gamePin, onUpdateCallback) {
     } catch (e) {
       console.warn("Firestore subscription error:", e.message);
     }
->>>>>>> 866b1742be63a6a122d10272f3404b9a0fbcf860
   }
 
   // Initial fetch check from localStorage
