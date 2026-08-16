@@ -178,6 +178,11 @@ export default function App() {
         return;
       }
 
+      // If current client is Host and has playersMap sync, update from external sync
+      if (currentAppMode === 'HOST_GAME' && syncedData.playersMap) {
+        dispatch(syncPlayersFromExternal(syncedData.playersMap));
+      }
+
       // Update Redux Game state
       dispatch(updateGameFromSync(syncedData));
 

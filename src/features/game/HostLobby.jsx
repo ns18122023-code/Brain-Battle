@@ -25,9 +25,6 @@ export default function HostLobby({ onStartGame }) {
   };
 
   const handleStart = () => {
-    if (playerCount === 0) {
-      if (!window.confirm("No players have joined yet! Start anyway?")) return;
-    }
     soundFx.playSelect();
     onStartGame();
   };
