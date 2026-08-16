@@ -20,11 +20,8 @@ export default function Navbar({ activeMode, onSwitchMode, onLaunchDemo }) {
           </div>
           <div>
             <h1 className="text-xl font-black text-white tracking-tight leading-none">
-              Quiz <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-pink-400">Battle</span>
+              Brain <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">Battle</span>
             </h1>
-            <span className="text-[10px] font-extrabold text-amber-400 tracking-widest uppercase">
-              Kahoot Clone
-            </span>
           </div>
         </div>
 

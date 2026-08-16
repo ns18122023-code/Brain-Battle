@@ -74,7 +74,9 @@ const gameSlice = createSlice({
       if (!payload) return;
       if (payload.status) state.status = payload.status;
       if (payload.gamePin) state.gamePin = payload.gamePin;
-      if (payload.quiz) state.quiz = payload.quiz;
+      if (payload.quiz && Array.isArray(payload.quiz.questions) && payload.quiz.questions.length > 0) {
+        state.quiz = payload.quiz;
+      }
       if (payload.currentQuestionIndex !== undefined) state.currentQuestionIndex = payload.currentQuestionIndex;
       if (payload.questionStartTime) state.questionStartTime = payload.questionStartTime;
       if (payload.timeRemaining !== undefined && !state.questionStartTime) {

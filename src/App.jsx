@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import Navbar from './components/Navbar';
 
@@ -63,6 +63,10 @@ export default function App() {
   const [appMode, setAppMode] = useState(queryPin ? 'PLAYER' : 'HOST_DASHBOARD');
   const [editingQuiz, setEditingQuiz] = useState(null);
 
+  // Ref container for latest state inside event listeners
+  const stateRef = useRef({});
+  stateRef.current = { appMode, gameStatus, game, playersMap };
+
   // 0. Initialize Firebase & Load Quizzes on App Mount
   useEffect(() => {
     console.log('🚀 Initializing Brain Battle App...');
@@ -80,26 +84,28 @@ export default function App() {
 
     const unsubscribe = subscribeToGameSync(gamePin, (syncedData) => {
       if (!syncedData) return;
+      const { appMode: currentAppMode, gameStatus: currentStatus, game: currentGame, playersMap: currentPlayers } = stateRef.current;
 
       // Handle Event: New Player Joined
       if (syncedData.type === 'PLAYER_JOINED' && syncedData.player) {
         dispatch(addPlayer(syncedData.player));
 
         // If I am the Host, re-publish full state so the joining player receives current status & quiz!
-        if (appMode === 'HOST_GAME') {
+        if (currentAppMode === 'HOST_GAME') {
           setTimeout(() => {
             const updatedMap = {
-              ...playersMap,
+              ...currentPlayers,
               [syncedData.player.id]: syncedData.player
             };
             publishGameSync(gamePin, {
               type: 'SYNC_FULL_STATE',
               gamePin,
-              status: gameStatus,
-              quiz: game.quiz,
-              currentQuestionIndex: game.currentQuestionIndex,
-              timeRemaining: game.timeRemaining,
-              isTimerActive: game.isTimerActive,
+              status: currentStatus,
+              quiz: currentGame.quiz,
+              currentQuestionIndex: currentGame.currentQuestionIndex,
+              questionStartTime: currentGame.questionStartTime,
+              timeRemaining: currentGame.timeRemaining,
+              isTimerActive: currentGame.isTimerActive,
               playersMap: updatedMap
             });
           }, 100);
@@ -117,7 +123,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [gamePin, dispatch, appMode, gameStatus, game.quiz, game.currentQuestionIndex, game.timeRemaining, game.isTimerActive, playersMap]);
+  }, [gamePin, dispatch]);
 
   // 1b. Auto-reconnect player if session exists in localStorage and matches queryPin
   useEffect(() => {
@@ -141,7 +147,7 @@ export default function App() {
       type: 'SYNC_FULL_STATE',
       gamePin,
       status: extraPayload.status || gameStatus,
-      quiz: game.quiz,
+      quiz: extraPayload.quiz || game.quiz,
       currentQuestionIndex: extraPayload.currentQuestionIndex !== undefined ? extraPayload.currentQuestionIndex : game.currentQuestionIndex,
       questionStartTime: extraPayload.questionStartTime !== undefined ? extraPayload.questionStartTime : game.questionStartTime,
       timeRemaining: extraPayload.timeRemaining !== undefined ? extraPayload.timeRemaining : game.timeRemaining,
@@ -172,9 +178,13 @@ export default function App() {
   const handleHostStartGame = () => {
     dispatch(resetQuestionState());
     dispatch(startQuestion(0));
+    const now = Date.now();
     const nextState = {
+      type: 'SYNC_FULL_STATE',
       status: 'QUESTION',
       currentQuestionIndex: 0,
+      questionStartTime: now,
+      quiz: game.quiz,
       playersMap
     };
     syncToCloud(nextState);

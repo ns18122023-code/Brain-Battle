@@ -6,21 +6,14 @@ const channels = {};
 // ==========================================
 // BROADCAST CHANNEL
 // ==========================================
-
 function getBroadcastChannel(gamePin) {
   if (!channels[gamePin]) {
     try {
-      channels[gamePin] = new BroadcastChannel(
-        `quiz_battle_${gamePin}`
-      );
+      channels[gamePin] = new BroadcastChannel(`quiz_battle_${gamePin}`);
     } catch (error) {
-      console.warn(
-        "BroadcastChannel not supported:",
-        error
-      );
+      console.warn("BroadcastChannel not supported:", error);
     }
   }
-
   return channels[gamePin];
 }
 
@@ -32,9 +25,7 @@ function getBroadcastChannel(gamePin) {
  * Publish game update to ntfy.sh (Cross-Device Cloud Relay), Firebase Firestore, and BroadcastChannel
  */
 export async function publishGameSync(gamePin, payload) {
-  if (!gamePin) {
-    return;
-  }
+  if (!gamePin) return;
 
   const fullData = {
     ...payload,
@@ -52,15 +43,9 @@ export async function publishGameSync(gamePin, payload) {
 
   // 2. localStorage backup sync for multi-tab state fallback
   try {
-    localStorage.setItem(
-      `quiz_battle_state_${gamePin}`,
-      JSON.stringify(fullData)
-    );
+    localStorage.setItem(`quiz_battle_state_${gamePin}`, JSON.stringify(fullData));
   } catch (error) {
-    console.warn(
-      "localStorage sync failed:",
-      error
-    );
+    console.warn("localStorage sync failed:", error);
   }
 
   // 3. ntfy.sh Zero-Config Global Cloud Relay (Works across physical phones, PCs, and different networks worldwide!)
@@ -75,29 +60,11 @@ export async function publishGameSync(gamePin, payload) {
   // 4. Firebase Firestore Real-Time Cloud Sync (if configured with valid keys)
   if (isFirebaseReady && db) {
     try {
-      const gameRef = doc(
-        db,
-        "games",
-        String(gamePin)
-      );
-
-      await setDoc(
-        gameRef,
-        fullData,
-        {
-          merge: true
-        }
-      );
-
-      console.log(
-        "Game successfully synced to Firebase:",
-        gamePin
-      );
+      const gameRef = doc(db, "games", String(gamePin));
+      await setDoc(gameRef, fullData, { merge: true });
+      console.log("Game successfully synced to Firebase:", gamePin);
     } catch (error) {
-      console.error(
-        "Firebase sync failed:",
-        error
-      );
+      console.error("Firebase sync failed:", error);
     }
   }
 }
@@ -119,54 +86,31 @@ export function subscribeToGameSync(gamePin, onUpdateCallback) {
   if (bc) {
     const handleBcMessage = (event) => {
       if (event.data) {
-        console.log(
-          "BroadcastChannel update:",
-          event.data
-        );
+        console.log("BroadcastChannel update:", event.data);
         onUpdateCallback(event.data);
       }
     };
-    bc.addEventListener(
-      "message",
-      handleBcMessage
-    );
+    bc.addEventListener("message", handleBcMessage);
     unsubscribes.push(() => {
-      bc.removeEventListener(
-        "message",
-        handleBcMessage
-      );
+      bc.removeEventListener("message", handleBcMessage);
     });
   }
 
   // 2. Listen to window storage events
   const handleStorage = (event) => {
-    if (
-      event.key === `quiz_battle_state_${gamePin}` &&
-      event.newValue
-    ) {
+    if (event.key === `quiz_battle_state_${gamePin}` && event.newValue) {
       try {
         const parsed = JSON.parse(event.newValue);
-        console.log(
-          "localStorage update:",
-          parsed
-        );
+        console.log("localStorage update:", parsed);
         onUpdateCallback(parsed);
       } catch (error) {
-        console.warn(
-          "Could not parse localStorage data"
-        );
+        console.warn("Could not parse localStorage data");
       }
     }
   };
-  window.addEventListener(
-    "storage",
-    handleStorage
-  );
+  window.addEventListener("storage", handleStorage);
   unsubscribes.push(() => {
-    window.removeEventListener(
-      "storage",
-      handleStorage
-    );
+    window.removeEventListener("storage", handleStorage);
   });
 
   // 3. Listen to ntfy.sh Global Cloud Relay SSE (Server-Sent Events) for real-time mobile/cross-device sync
@@ -203,10 +147,7 @@ export function subscribeToGameSync(gamePin, onUpdateCallback) {
         (docSnap) => {
           if (docSnap.exists()) {
             const gameData = docSnap.data();
-            console.log(
-              "Firebase update:",
-              gameData
-            );
+            console.log("Firebase update:", gameData);
             onUpdateCallback(gameData);
           }
         },
@@ -222,16 +163,12 @@ export function subscribeToGameSync(gamePin, onUpdateCallback) {
 
   // Initial fetch check from localStorage
   try {
-    const cached = localStorage.getItem(
-      `quiz_battle_state_${gamePin}`
-    );
+    const cached = localStorage.getItem(`quiz_battle_state_${gamePin}`);
     if (cached) {
       onUpdateCallback(JSON.parse(cached));
     }
   } catch (error) {
-    console.warn(
-      "Could not read cached game data"
-    );
+    console.warn("Could not read cached game data");
   }
 
   // CLEANUP
@@ -240,10 +177,7 @@ export function subscribeToGameSync(gamePin, onUpdateCallback) {
       try {
         unsubscribe();
       } catch (error) {
-        console.warn(
-          "Cleanup error:",
-          error
-        );
+        console.warn("Cleanup error:", error);
       }
     });
   };
