@@ -81,11 +81,11 @@ export default function PlayerJoin({ initialPin, onJoined }) {
       <div className="glass-panel p-8 rounded-3xl border-2 border-purple-500/40 shadow-2xl space-y-6 text-center">
         {/* Title Header */}
         <div className="space-y-2">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 flex items-center justify-center mx-auto shadow-lg shadow-purple-950/60 mb-2">
+          <div className="w-16 h-16 rounded-2xl bg-linear-to-tr from-purple-600 via-pink-600 to-amber-500 flex items-center justify-center mx-auto shadow-lg shadow-purple-950/60 mb-2">
             <Gamepad2 className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-3xl font-black text-white tracking-tight">
-            Join <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">Quiz Battle</span>
+            Join <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-pink-400">Quiz Battle</span>
           </h2>
           <p className="text-slate-400 text-xs font-semibold">
             {step === 1 ? 'Enter Game PIN to connect' : `Game PIN: #${pin}`}
@@ -107,7 +107,7 @@ export default function PlayerJoin({ initialPin, onJoined }) {
             </div>
             <button
               type="submit"
-              className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-purple-950/60 transition-all cursor-pointer transform active:scale-95 flex items-center justify-center gap-2"
+              className="w-full py-4 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-purple-950/60 transition-all cursor-pointer transform active:scale-95 flex items-center justify-center gap-2"
             >
               Enter PIN <ArrowRight className="w-5 h-5" />
             </button>
@@ -132,7 +132,7 @@ export default function PlayerJoin({ initialPin, onJoined }) {
                     }}
                     className={`text-2xl p-2 rounded-xl transition-all duration-200 cursor-pointer transform hover:scale-115 active:scale-90 ${
                       avatar === emoji 
-                        ? 'bg-gradient-to-tr from-purple-600 to-pink-600 scale-110 shadow-lg shadow-purple-500/40 text-white' 
+                        ? 'bg-linear-to-tr from-purple-600 to-pink-600 scale-110 shadow-lg shadow-purple-500/40 text-white' 
                         : 'hover:bg-slate-800'
                     }`}
                   >
@@ -176,7 +176,7 @@ export default function PlayerJoin({ initialPin, onJoined }) {
 
             <button
               type="submit"
-              className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-emerald-950/60 transition-all cursor-pointer transform active:scale-95"
+              className="w-full py-4 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-emerald-950/60 transition-all cursor-pointer transform active:scale-95"
             >
               OK, Go! 🚀
             </button>

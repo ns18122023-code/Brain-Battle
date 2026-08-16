@@ -41,7 +41,7 @@ export default function QuizList({ onCreateNew, onEditQuiz, onStartGame }) {
             <Sparkles className="w-4 h-4 text-amber-400" /> Host Dashboard
           </span>
           <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-            Select or Create a <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">Quiz Battle</span>
+            Select or Create a <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-pink-500">Quiz Battle</span>
           </h1>
           <p className="text-slate-300 text-base">
             Launch a live multiplayer game with custom questions, speed-based scoring, and real-time leaderboards.
@@ -53,7 +53,7 @@ export default function QuizList({ onCreateNew, onEditQuiz, onStartGame }) {
             soundFx.playSelect();
             onCreateNew();
           }}
-          className="z-10 flex items-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-extrabold rounded-2xl shadow-xl shadow-purple-900/40 transition-all cursor-pointer transform hover:scale-105 active:scale-95 shrink-0"
+          className="z-10 flex items-center gap-2 px-6 py-4 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-extrabold rounded-2xl shadow-xl shadow-purple-900/40 transition-all cursor-pointer transform hover:scale-105 active:scale-95 shrink-0"
         >
           <Plus className="w-6 h-6" /> Create New Quiz
         </button>
@@ -107,7 +107,7 @@ export default function QuizList({ onCreateNew, onEditQuiz, onStartGame }) {
                   alt={quiz.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/40 to-transparent" />
                 
                 <span className="absolute top-3 left-3 px-3 py-1 bg-slate-950/80 backdrop-blur-md rounded-full text-xs font-bold text-purple-300 border border-slate-700/50">
                   {quiz.category || 'General'}
@@ -134,7 +134,7 @@ export default function QuizList({ onCreateNew, onEditQuiz, onStartGame }) {
             <div className="p-5 pt-0 flex items-center gap-2">
               <button
                 onClick={() => handleStartGame(quiz)}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-950/50 transition-all cursor-pointer transform active:scale-95 text-sm"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-950/50 transition-all cursor-pointer transform active:scale-95 text-sm"
               >
                 <Play className="w-4 h-4 fill-white" /> Start Game
               </button>

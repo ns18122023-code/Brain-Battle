@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { selectCurrentPlayer, selectPlayerRank, selectSortedLeaderboard } from './playersSlice';
+import { selectCurrentPlayer, selectPlayerRank } from './playersSlice';
 import { CheckCircle2, XCircle, Flame, Trophy } from 'lucide-react';
 import { soundFx } from '../../services/soundService';
 
@@ -9,7 +9,6 @@ function AnimatedCounter({ to, duration = 1000 }) {
   const [count, setCount] = React.useState(0);
 
   useEffect(() => {
-    let start = 0;
     const end = parseInt(to, 10);
     if (isNaN(end) || end <= 0) {
       setCount(0);

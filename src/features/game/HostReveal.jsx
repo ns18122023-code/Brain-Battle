@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { selectCurrentQuestion, selectGame } from './gameSlice';
+import { selectCurrentQuestion } from './gameSlice';
 import { selectAnswerDistribution, selectAnsweredCount } from '../player/playersSlice';
 import { Check, ArrowRight, BarChart2 } from 'lucide-react';
 import { soundFx } from '../../services/soundService';
@@ -86,7 +86,7 @@ export default function HostReveal({ onShowLeaderboard }) {
             soundFx.playSelect();
             onShowLeaderboard();
           }}
-          className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-extrabold text-lg rounded-2xl shadow-xl shadow-purple-950/60 transition-all cursor-pointer transform hover:scale-105 active:scale-95"
+          className="flex items-center gap-3 px-8 py-4 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-extrabold text-lg rounded-2xl shadow-xl shadow-purple-950/60 transition-all cursor-pointer transform hover:scale-105 active:scale-95"
         >
           View Leaderboard <ArrowRight className="w-6 h-6" />
         </button>

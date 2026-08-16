@@ -167,7 +167,7 @@ export default function QuizBuilder({ initialQuiz, onCancel, onSaved }) {
         <div className="flex items-center gap-3">
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-900/30 transition-all cursor-pointer transform active:scale-95"
+            className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-900/30 transition-all cursor-pointer transform active:scale-95"
           >
             <Save className="w-5 h-5" /> Save Quiz
           </button>

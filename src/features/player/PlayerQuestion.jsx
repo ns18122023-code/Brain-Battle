@@ -85,11 +85,11 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
   ];
 
   // Dynamic progress bar color
-  let barColor = 'bg-gradient-to-r from-emerald-500 to-teal-400';
+  let barColor = 'bg-linear-to-r from-emerald-500 to-teal-400';
   if (displayTime <= 5) {
-    barColor = 'bg-gradient-to-r from-red-500 to-pink-500 animate-pulse';
+    barColor = 'bg-linear-to-r from-red-500 to-pink-500 animate-pulse';
   } else if (displayTime <= 10) {
-    barColor = 'bg-gradient-to-r from-amber-500 to-orange-400';
+    barColor = 'bg-linear-to-r from-amber-500 to-orange-400';
   }
 
   // Calculate locked speed

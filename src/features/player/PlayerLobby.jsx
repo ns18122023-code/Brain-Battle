@@ -73,7 +73,7 @@ export default function PlayerLobby({ gamePin, onToggleReady }) {
           className={`w-full py-4 rounded-2xl font-black text-sm transition-all duration-200 cursor-pointer transform active:scale-95 border shadow-xl flex items-center justify-center gap-2 ${
             isReady
               ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
-              : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border-purple-500/30 shadow-purple-950/60'
+              : 'bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border-purple-500/30 shadow-purple-950/60'
           }`}
         >
           {isReady ? '✓ Ready (Click to Chill)' : '⚡ I\'m Ready! Lock In'}
