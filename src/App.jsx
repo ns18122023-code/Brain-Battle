@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import Navbar from './components/Navbar';
 
 // Quiz Slices
-import { selectAllQuizzes } from './features/quiz/quizSlice';
+import { selectAllQuizzes, fetchQuizzes } from './features/quiz/quizSlice';
 import QuizList from './features/quiz/QuizList';
 import QuizBuilder from './features/quiz/QuizBuilder';
 
@@ -60,6 +60,17 @@ export default function App() {
   // App Modes: 'HOST_DASHBOARD' | 'HOST_BUILDER' | 'HOST_GAME' | 'PLAYER'
   const [appMode, setAppMode] = useState(queryPin ? 'PLAYER' : 'HOST_DASHBOARD');
   const [editingQuiz, setEditingQuiz] = useState(null);
+
+  // 0. Initialize Firebase & Load Quizzes on App Mount
+  useEffect(() => {
+    console.log('🚀 Initializing Brain Battle App...');
+    console.log('📱 Current Mode:', appMode);
+    
+    // Load quizzes from Firebase (with localStorage fallback)
+    dispatch(fetchQuizzes()).catch(err => 
+      console.error('Failed to load quizzes:', err.message)
+    );
+  }, []);
 
   // 1. Subscribe to Real-Time Data Sync over ntfy.sh + Firebase + BroadcastChannel
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { INITIAL_QUIZZES } from '../../utils/sampleQuizzes';
+import { saveQuizToFirebase, deleteQuizFromFirebase, getAllQuizzesFromFirebase } from '../../services/firebaseQuizService';
 
 const LOCAL_STORAGE_KEY = 'quiz_battle_quizzes_v1';
 
@@ -12,22 +13,46 @@ const loadStoredQuizzes = () => {
   return INITIAL_QUIZZES;
 };
 
-// Async Thunk: Fetch Quizzes
+// Async Thunk: Fetch Quizzes (from Firebase first, fallback to localStorage)
 export const fetchQuizzes = createAsyncThunk(
   'quiz/fetchQuizzes',
   async (_, { rejectWithValue }) => {
     try {
-      // Simulate slight network delay
-      await new Promise((res) => setTimeout(res, 300));
-      const data = loadStoredQuizzes();
-      return data;
+      // Try to fetch from Firebase first
+      const firebaseQuizzes = await getAllQuizzesFromFirebase();
+      
+      if (firebaseQuizzes && firebaseQuizzes.length > 0) {
+        console.log('📚 Loaded quizzes from Firebase');
+        // Also sync to localStorage for offline access
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(firebaseQuizzes));
+        return firebaseQuizzes;
+      }
+
+      // Fallback to localStorage
+      console.log('📚 Loaded quizzes from localStorage');
+      const localQuizzes = loadStoredQuizzes();
+      
+      // If we have quizzes, try to sync them to Firebase
+      if (localQuizzes.length > 0) {
+        setTimeout(() => {
+          localQuizzes.forEach(quiz => {
+            saveQuizToFirebase(quiz).catch(err => 
+              console.warn('Could not sync quiz to Firebase:', err.message)
+            );
+          });
+        }, 1000);
+      }
+      
+      return localQuizzes;
     } catch (err) {
-      return rejectWithValue(err.message);
+      console.error('Error fetching quizzes:', err.message);
+      // Last resort: return localStorage data
+      return loadStoredQuizzes();
     }
   }
 );
 
-// Async Thunk: Save Quiz
+// Async Thunk: Save Quiz (to both Firebase and localStorage)
 export const saveQuizAsync = createAsyncThunk(
   'quiz/saveQuizAsync',
   async (quizData, { getState, rejectWithValue }) => {
@@ -42,7 +67,14 @@ export const saveQuizAsync = createAsyncThunk(
         updatedQuizzes = [quizData, ...state.quizzes];
       }
 
+      // Save to localStorage
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedQuizzes));
+      
+      // Try to save to Firebase (async, don't wait)
+      saveQuizToFirebase(quizData).catch(err =>
+        console.warn('Could not save quiz to Firebase:', err.message)
+      );
+
       return quizData;
     } catch (err) {
       return rejectWithValue(err.message);
@@ -50,14 +82,22 @@ export const saveQuizAsync = createAsyncThunk(
   }
 );
 
-// Async Thunk: Delete Quiz
+// Async Thunk: Delete Quiz (from both Firebase and localStorage)
 export const deleteQuizAsync = createAsyncThunk(
   'quiz/deleteQuizAsync',
   async (quizId, { getState, rejectWithValue }) => {
     try {
       const state = getState().quiz;
       const updated = state.quizzes.filter(q => q.id !== quizId);
+      
+      // Update localStorage
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+      
+      // Try to delete from Firebase (async, don't wait)
+      deleteQuizFromFirebase(quizId).catch(err =>
+        console.warn('Could not delete quiz from Firebase:', err.message)
+      );
+
       return quizId;
     } catch (err) {
       return rejectWithValue(err.message);
