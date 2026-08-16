@@ -31,7 +31,7 @@ function AnimatedCounter({ to, duration = 500 }) {
 
 export default function PlayerFeedback() {
   const player = useSelector(selectCurrentPlayer);
-  const rank = useSelector(selectPlayerRank(player?.id));
+  const rank = useSelector(state => selectPlayerRank(state, player?.id));
 
   const isCorrect = player?.isCorrect;
   const pointsAdded = player?.lastPoints || 0;

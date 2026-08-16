@@ -95,10 +95,36 @@ const playersSlice = createSlice({
     },
     syncPlayersFromExternal: (state, action) => {
       if (action.payload) {
-        state.players = {
-          ...state.players,
-          ...action.payload
-        };
+        const incoming = action.payload;
+        const currentId = state.currentPlayerId;
+
+        // If local player has already answered current question, preserve local answer details to prevent flicker
+        if (currentId && state.players[currentId] && state.players[currentId].answeredCurrentQuestion) {
+          const localP = state.players[currentId];
+          const incomingP = incoming[currentId];
+
+          const mergedPlayer = {
+            ...(incomingP || localP),
+            answeredCurrentQuestion: localP.answeredCurrentQuestion,
+            lastAnswerIndex: localP.lastAnswerIndex ?? incomingP?.lastAnswerIndex,
+            isCorrect: localP.isCorrect ?? incomingP?.isCorrect,
+            lastPoints: localP.lastPoints || incomingP?.lastPoints || 0,
+            lastBasePoints: localP.lastBasePoints || incomingP?.lastBasePoints || 0,
+            lastStreakBonus: localP.lastStreakBonus || incomingP?.lastStreakBonus || 0,
+            score: Math.max(localP.score || 0, incomingP?.score || 0)
+          };
+
+          state.players = {
+            ...state.players,
+            ...incoming,
+            [currentId]: mergedPlayer
+          };
+        } else {
+          state.players = {
+            ...state.players,
+            ...incoming
+          };
+        }
       }
     },
     togglePlayerReady: (state, action) => {
@@ -173,12 +199,13 @@ export const selectAnswerDistribution = createSelector(
   }
 );
 
-// Derived Selector: Rank of a specific player
-export const selectPlayerRank = (playerId) => createSelector(
-  [selectSortedLeaderboard],
-  (sortedList) => {
+// Derived Selector: Rank of a specific player (static memoized)
+export const selectPlayerRank = createSelector(
+  [selectSortedLeaderboard, (state, playerId) => playerId],
+  (sortedList, playerId) => {
+    if (!playerId) return 1;
     const index = sortedList.findIndex(p => p.id === playerId);
-    return index >= 0 ? index + 1 : null;
+    return index >= 0 ? index + 1 : 1;
   }
 );
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import Navbar from './components/Navbar';
+import quizBg from './assets/quiz_bg.png';
 
 // Quiz Slices
 import { selectAllQuizzes, fetchQuizzes } from './features/quiz/quizSlice';
@@ -464,18 +465,32 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans">
-      <Navbar
-        activeMode={appMode}
-        onSwitchMode={(mode) => {
-          if (mode === 'HOST_DASHBOARD' || mode === 'PLAYER') {
-            clearActiveSession();
-            dispatch(resetGameSession());
-          }
-          setAppMode(mode);
+    <div className="min-h-screen flex flex-col text-slate-100 font-sans relative overflow-x-hidden bg-slate-950">
+      {/* Fixed Blurred Quiz Background Image Layer */}
+      <div 
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.6), rgba(3, 7, 18, 0.82)), url(${quizBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          filter: 'blur(7px) brightness(95%) contrast(110%)',
+          transform: 'scale(1.05)'
         }}
-        onLaunchDemo={handleLaunchQuickDemo}
       />
+
+      <div className="relative z-10 flex flex-col flex-1">
+        <Navbar
+          activeMode={appMode}
+          onSwitchMode={(mode) => {
+            if (mode === 'HOST_DASHBOARD' || mode === 'PLAYER') {
+              clearActiveSession();
+              dispatch(resetGameSession());
+            }
+            setAppMode(mode);
+          }}
+          onLaunchDemo={handleLaunchQuickDemo}
+        />
 
       <main className="flex-1">
         {/* MODE 1: HOST DASHBOARD (Quiz List) */}
@@ -574,6 +589,7 @@ export default function App() {
           </>
         )}
       </main>
+      </div>
     </div>
   );
 }

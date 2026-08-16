@@ -126,19 +126,44 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
 
       {/* Answer Lock State vs Active Buttons */}
       {hasAnswered ? (
-        <div className="glass-panel p-8 rounded-3xl border-2 border-emerald-500/40 text-center space-y-4 my-auto shadow-2xl">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto animate-pulse">
-            <CheckCircle className="w-10 h-10" />
-          </div>
-          <h3 className="text-2xl font-black text-white">Answer Locked!</h3>
-          
-          <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-300 font-extrabold text-xs border border-emerald-500/20 shadow-md">
-            ⚡ Locked in {lockedTime}s!
+        <div className="space-y-4 flex-1 flex flex-col justify-center">
+          <div className="glass-panel p-4 rounded-2xl border border-emerald-500/40 text-center space-y-1 bg-emerald-950/20">
+            <div className="flex items-center justify-center gap-2 text-emerald-400 font-extrabold text-sm">
+              <CheckCircle className="w-5 h-5" /> Answer Locked in {lockedTime}s!
+            </div>
+            <p className="text-slate-400 text-xs font-semibold">
+              Waiting for question timer to finish...
+            </p>
           </div>
 
-          <p className="text-slate-400 text-[11px] font-semibold tracking-wide">
-            Waiting for other players or timer to finish...
-          </p>
+          <div className="grid grid-cols-2 gap-4 pointer-events-none">
+            {currentQuestion.options.map((opt, idx) => {
+              if (currentQuestion.type === 'true_false' && idx >= 2) return null;
+              const style = optionStyles[idx % optionStyles.length];
+              const isSelected = player?.lastAnswerIndex === idx;
+
+              return (
+                <div
+                  key={idx}
+                  className={`h-36 sm:h-44 rounded-3xl ${style.bg} flex flex-col items-center justify-center text-white font-black shadow-lg transition-all duration-300 ${
+                    isSelected
+                      ? 'ring-4 ring-white scale-95 opacity-100 shadow-purple-500/30'
+                      : 'opacity-35 grayscale-[40%]'
+                  }`}
+                >
+                  <span className="text-4xl sm:text-5xl mb-2 filter drop-shadow-md">{style.icon}</span>
+                  <span className="text-xs sm:text-sm px-2 text-center font-extrabold line-clamp-2">
+                    {opt.text || style.name}
+                  </span>
+                  {isSelected && (
+                    <span className="text-[10px] uppercase font-extrabold bg-black/30 px-2 py-0.5 rounded-md mt-1 border border-white/20">
+                      ✓ Selected
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       ) : (
         <div className="space-y-4 flex-1 flex flex-col justify-center">
