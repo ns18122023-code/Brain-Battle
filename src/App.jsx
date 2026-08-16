@@ -67,16 +67,61 @@ export default function App() {
   const stateRef = useRef({});
   stateRef.current = { appMode, gameStatus, game, playersMap };
 
-  // 0. Initialize Firebase & Load Quizzes on App Mount
+  // 0. Auto-Restore active Host or Player session from localStorage on F5 Page Reload
   useEffect(() => {
-    console.log('🚀 Initializing Brain Battle App...');
-    console.log('📱 Current Mode:', appMode);
-    
-    // Load quizzes from Firebase (with localStorage fallback)
-    dispatch(fetchQuizzes()).catch(err => 
-      console.error('Failed to load quizzes:', err.message)
-    );
-  }, []);
+    const savedRole = localStorage.getItem('quiz_battle_active_role');
+    const savedPin = localStorage.getItem('quiz_battle_game_pin') || queryPin;
+    const savedPlayerId = localStorage.getItem('quiz_battle_player_id');
+
+    if (savedPin) {
+      // Fetch cached state for this gamePin from localStorage
+      const cached = localStorage.getItem(`quiz_battle_state_${savedPin}`);
+      let cachedState = null;
+      if (cached) {
+        try {
+          cachedState = JSON.parse(cached);
+        } catch (e) {}
+      }
+
+      // If cachedState status is PODIUM, do not auto-resume finished games
+      if (cachedState?.status === 'PODIUM') {
+        localStorage.removeItem('quiz_battle_active_role');
+        return;
+      }
+
+      if (savedRole === 'HOST' || (!queryPin && savedRole !== 'PLAYER' && cachedState?.quiz)) {
+        // RESUME HOST SESSION
+        console.log('🔄 Auto-resuming Host session for PIN:', savedPin);
+        if (cachedState) {
+          dispatch(updateGameFromSync(cachedState));
+          if (cachedState.quiz) {
+            dispatch(setGameSession({ gamePin: savedPin, quiz: cachedState.quiz }));
+          }
+          if (cachedState.playersMap) {
+            dispatch(syncPlayersFromExternal(cachedState.playersMap));
+          }
+        } else {
+          dispatch(updateGameFromSync({ gamePin: savedPin }));
+        }
+        setAppMode('HOST_GAME');
+      } else if (savedRole === 'PLAYER' || queryPin || savedPlayerId) {
+        // RESUME PLAYER SESSION
+        console.log('🔄 Auto-resuming Player session for PIN:', savedPin);
+        setAppMode('PLAYER');
+        if (savedPlayerId) {
+          dispatch(setCurrentPlayer(savedPlayerId));
+        }
+        if (cachedState) {
+          dispatch(updateGameFromSync(cachedState));
+          if (cachedState.playersMap) {
+            dispatch(syncPlayersFromExternal(cachedState.playersMap));
+          }
+        } else {
+          dispatch(updateGameFromSync({ gamePin: savedPin }));
+        }
+      }
+    }
+  }, [dispatch]);
 
   // 1. Subscribe to Real-Time Data Sync over ntfy.sh + Firebase + BroadcastChannel
   useEffect(() => {
@@ -202,21 +247,6 @@ export default function App() {
     return () => unsubscribe();
   }, [gamePin, dispatch]);
 
-  // 1b. Auto-reconnect player if session exists in localStorage and matches queryPin
-  useEffect(() => {
-    if (queryPin) {
-      const savedPin = localStorage.getItem('quiz_battle_game_pin');
-      const savedPlayerId = localStorage.getItem('quiz_battle_player_id');
-      
-      if (savedPin === queryPin && savedPlayerId) {
-        // Restore player ID in Redux
-        dispatch(setCurrentPlayer(savedPlayerId));
-        // Set gamePin in Redux to trigger subscription
-        dispatch(updateGameFromSync({ gamePin: queryPin }));
-      }
-    }
-  }, [queryPin, dispatch]);
-
   // Helper to construct clean reset players map for new questions
   const getResetPlayersMap = (currentMap) => {
     const cleanMap = {};
@@ -258,6 +288,10 @@ export default function App() {
     dispatch(setGameSession({ gamePin: generatedPin, quiz }));
     dispatch(resetAllPlayers());
     setAppMode('HOST_GAME');
+
+    // Save Host active session
+    localStorage.setItem('quiz_battle_active_role', 'HOST');
+    localStorage.setItem('quiz_battle_game_pin', generatedPin);
 
     // Publish initial lobby state
     publishGameSync(generatedPin, {
@@ -324,7 +358,8 @@ export default function App() {
   const handlePlayerJoined = (enteredPin, playerData) => {
     dispatch(addPlayer(playerData));
     
-    // Save player ID and PIN to localStorage for session persistence
+    // Save active role, player ID, and PIN to localStorage for session persistence
+    localStorage.setItem('quiz_battle_active_role', 'PLAYER');
     localStorage.setItem('quiz_battle_player_id', playerData.id);
     localStorage.setItem('quiz_battle_game_pin', enteredPin);
     
@@ -458,6 +493,9 @@ export default function App() {
                   if (game.quiz) handleStartHostSession(game.quiz);
                 }}
                 onBackHome={() => {
+                  localStorage.removeItem('quiz_battle_active_role');
+                  localStorage.removeItem('quiz_battle_game_pin');
+                  localStorage.removeItem('quiz_battle_player_id');
                   dispatch(resetGameSession());
                   setAppMode('HOST_DASHBOARD');
                 }}
