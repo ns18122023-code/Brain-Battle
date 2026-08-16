@@ -73,9 +73,9 @@ export default function App() {
   useEffect(() => {
     console.log('🚀 Initializing Brain Battle App...');
     console.log('📱 Current Mode:', appMode);
-    
+
     // Load quizzes from Firebase (with localStorage fallback)
-    dispatch(fetchQuizzes()).catch(err => 
+    dispatch(fetchQuizzes()).catch(err =>
       console.error('Failed to load quizzes:', err.message)
     );
   }, []);
@@ -367,7 +367,7 @@ export default function App() {
   const handleNextQuestion = () => {
     dispatch(resetQuestionState());
     dispatch(nextQuestion());
-    
+
     // Check if game reached podium or next question
     const nextIndex = game.currentQuestionIndex + 1;
     if (nextIndex < (game.quiz?.questions?.length || 0)) {
@@ -407,7 +407,7 @@ export default function App() {
     
     // Dispatch gamePin to Redux so player starts syncing immediately
     dispatch(updateGameFromSync({ gamePin: enteredPin }));
-    
+
     // Publish PLAYER_JOINED event to cloud pub/sub channel
     publishGameSync(enteredPin, {
       type: 'PLAYER_JOINED',
@@ -426,14 +426,14 @@ export default function App() {
       });
     }
   };
- 
+
   const handlePlayerToggleReady = () => {
     if (currentPlayer && gamePin) {
       const isReady = !playersMap[currentPlayer.id]?.isReady;
-      
+
       // Toggle locally
       dispatch(togglePlayerReady(currentPlayer.id));
-      
+
       // Publish event to cloud
       publishGameSync(gamePin, {
         type: 'PLAYER_READY_TOGGLED',
