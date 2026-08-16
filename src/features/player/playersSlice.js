@@ -48,22 +48,23 @@ const playersSlice = createSlice({
       state.currentPlayerId = action.payload;
     },
     addPlayer: (state, action) => {
-      const { id, nickname, avatar } = action.payload;
-      state.players[id] = {
-        id,
-        nickname,
-        avatar: avatar || '🚀',
-        score: 0,
-        streak: 0,
-        lastPoints: 0,
-        lastBasePoints: 0,
-        lastStreakBonus: 0,
-        lastAnswerIndex: null,
-        isCorrect: null,
-        answeredCurrentQuestion: false,
-        answerTimeRemaining: null,
-        previousRank: null,
-        isReady: false
+      const p = action.payload;
+      if (!p || !p.id) return;
+      state.players[p.id] = {
+        id: p.id,
+        nickname: p.nickname || 'Player',
+        avatar: p.avatar || '🚀',
+        score: p.score || 0,
+        streak: p.streak || 0,
+        lastPoints: p.lastPoints || 0,
+        lastBasePoints: p.lastBasePoints || 0,
+        lastStreakBonus: p.lastStreakBonus || 0,
+        lastAnswerIndex: p.lastAnswerIndex ?? null,
+        isCorrect: p.isCorrect ?? null,
+        answeredCurrentQuestion: p.answeredCurrentQuestion ?? false,
+        answerTimeRemaining: p.answerTimeRemaining ?? null,
+        previousRank: p.previousRank || null,
+        isReady: p.isReady || false
       };
     },
     resetQuestionState: (state) => {
@@ -94,7 +95,10 @@ const playersSlice = createSlice({
     },
     syncPlayersFromExternal: (state, action) => {
       if (action.payload) {
-        state.players = action.payload;
+        state.players = {
+          ...state.players,
+          ...action.payload
+        };
       }
     },
     togglePlayerReady: (state, action) => {

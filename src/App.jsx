@@ -27,6 +27,7 @@ import HostPodium from './features/game/HostPodium';
 
 // Player Slices & Components
 import {
+  addPlayer,
   syncPlayersFromExternal,
   resetQuestionState,
   resetAllPlayers,
@@ -62,12 +63,38 @@ export default function App() {
   const [appMode, setAppMode] = useState(queryPin ? 'PLAYER' : 'HOST_DASHBOARD');
   const [editingQuiz, setEditingQuiz] = useState(null);
 
-  // 1. Subscribe to Real-Time Data Sync over Firebase Firestore + BroadcastChannel
+  // 1. Subscribe to Real-Time Data Sync over ntfy.sh + Firebase + BroadcastChannel
   useEffect(() => {
     if (!gamePin) return;
 
     const unsubscribe = subscribeToGameSync(gamePin, (syncedData) => {
       if (!syncedData) return;
+
+      // Handle Event: New Player Joined
+      if (syncedData.type === 'PLAYER_JOINED' && syncedData.player) {
+        dispatch(addPlayer(syncedData.player));
+
+        // If I am the Host, re-publish full state so the joining player receives current status & quiz!
+        if (appMode === 'HOST_GAME') {
+          setTimeout(() => {
+            const updatedMap = {
+              ...playersMap,
+              [syncedData.player.id]: syncedData.player
+            };
+            publishGameSync(gamePin, {
+              type: 'SYNC_FULL_STATE',
+              gamePin,
+              status: gameStatus,
+              quiz: game.quiz,
+              currentQuestionIndex: game.currentQuestionIndex,
+              timeRemaining: game.timeRemaining,
+              isTimerActive: game.isTimerActive,
+              playersMap: updatedMap
+            });
+          }, 100);
+        }
+        return;
+      }
 
       // Update Redux Game state
       dispatch(updateGameFromSync(syncedData));
@@ -79,7 +106,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [gamePin, dispatch]);
+  }, [gamePin, dispatch, appMode, gameStatus, game.quiz, game.currentQuestionIndex, game.timeRemaining, game.isTimerActive, playersMap]);
 
   // 1b. Auto-reconnect player if session exists in localStorage and matches queryPin
   useEffect(() => {
@@ -100,6 +127,7 @@ export default function App() {
   const syncToCloud = (extraPayload = {}) => {
     if (!gamePin) return;
     const payload = {
+      type: 'SYNC_FULL_STATE',
       gamePin,
       status: extraPayload.status || gameStatus,
       quiz: game.quiz,
@@ -120,6 +148,7 @@ export default function App() {
 
     // Publish initial lobby state
     publishGameSync(generatedPin, {
+      type: 'SYNC_FULL_STATE',
       gamePin: generatedPin,
       status: 'LOBBY',
       quiz,
@@ -170,18 +199,7 @@ export default function App() {
 
   // --- PLAYER ACTIONS ---
   const handlePlayerJoined = (enteredPin, playerData) => {
-    const updatedPlayers = {
-      ...playersMap,
-      [playerData.id]: {
-        ...playerData,
-        score: 0,
-        streak: 0,
-        lastPoints: 0,
-        lastAnswerIndex: null,
-        isCorrect: null,
-        answeredCurrentQuestion: false
-      }
-    };
+    dispatch(addPlayer(playerData));
     
     // Save player ID and PIN to localStorage for session persistence
     localStorage.setItem('quiz_battle_player_id', playerData.id);
@@ -190,7 +208,12 @@ export default function App() {
     // Dispatch gamePin to Redux so player starts syncing immediately
     dispatch(updateGameFromSync({ gamePin: enteredPin }));
     
-    publishGameSync(enteredPin, { playersMap: updatedPlayers });
+    // Publish PLAYER_JOINED event to cloud pub/sub channel
+    publishGameSync(enteredPin, {
+      type: 'PLAYER_JOINED',
+      gamePin: enteredPin,
+      player: playerData
+    });
   };
 
   const handlePlayerAnswerSubmitted = () => {

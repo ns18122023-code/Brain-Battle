@@ -15,20 +15,23 @@ function getBroadcastChannel(gamePin) {
 }
 
 /**
- * Publish game update to Firebase Firestore and BroadcastChannel
+ * Publish game update to ntfy.sh (Cross-Device Cloud Relay), Firebase Firestore, and BroadcastChannel
  */
 export async function publishGameSync(gamePin, payload) {
   if (!gamePin) return;
 
   const fullData = {
     ...payload,
+    gamePin,
     updatedAt: Date.now()
   };
 
-  // 1. BroadcastChannel (for sub-millisecond local multi-tab sync)
+  // 1. BroadcastChannel (for sub-millisecond local multi-tab sync on same browser)
   const bc = getBroadcastChannel(gamePin);
   if (bc) {
-    bc.postMessage(fullData);
+    try {
+      bc.postMessage(fullData);
+    } catch (e) {}
   }
 
   // 2. LocalStorage backup sync for multi-tab state fallback
@@ -38,7 +41,16 @@ export async function publishGameSync(gamePin, payload) {
     // Ignore storage quota errors
   }
 
-  // 3. Firebase Firestore Real-Time Cloud Sync
+  // 3. ntfy.sh Zero-Config Global Cloud Relay (Works across physical phones, PCs, and different networks worldwide!)
+  try {
+    fetch(`https://ntfy.sh/quiz_battle_pin_${gamePin}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fullData)
+    }).catch(() => {});
+  } catch (e) {}
+
+  // 4. Firebase Firestore Real-Time Cloud Sync (if configured with valid keys)
   if (isFirebaseReady && db) {
     try {
       const gameRef = doc(db, 'games', String(gamePin));
@@ -50,7 +62,7 @@ export async function publishGameSync(gamePin, payload) {
 }
 
 /**
- * Subscribe to Game updates from Firebase Firestore & local channel
+ * Subscribe to Game updates from ntfy.sh, Firebase Firestore, BroadcastChannel & LocalStorage
  */
 export function subscribeToGameSync(gamePin, onUpdateCallback) {
   if (!gamePin) return () => {};
@@ -81,7 +93,31 @@ export function subscribeToGameSync(gamePin, onUpdateCallback) {
   window.addEventListener('storage', handleStorage);
   unsubscribes.push(() => window.removeEventListener('storage', handleStorage));
 
-  // 3. Listen to Firebase Firestore `onSnapshot`
+  // 3. Listen to ntfy.sh Global Cloud Relay SSE (Server-Sent Events) for real-time mobile/cross-device sync
+  try {
+    const sseUrl = `https://ntfy.sh/quiz_battle_pin_${gamePin}/json`;
+    const eventSource = new EventSource(sseUrl);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === 'message' && data.message) {
+          const payload = JSON.parse(data.message);
+          onUpdateCallback(payload);
+        }
+      } catch (e) {}
+    };
+
+    unsubscribes.push(() => {
+      try {
+        eventSource.close();
+      } catch (e) {}
+    });
+  } catch (e) {
+    console.warn("ntfy subscription error:", e.message);
+  }
+
+  // 4. Listen to Firebase Firestore `onSnapshot` (if configured)
   if (isFirebaseReady && db) {
     try {
       const gameRef = doc(db, 'games', String(gamePin));
@@ -112,3 +148,4 @@ export function subscribeToGameSync(gamePin, onUpdateCallback) {
     });
   };
 }
+
