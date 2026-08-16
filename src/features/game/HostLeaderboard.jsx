@@ -38,9 +38,9 @@ export default function HostLeaderboard({ onNext }) {
         ) : (
           topFive.map((player, idx) => {
             const rankColors = [
-              'bg-gradient-to-r from-amber-500/30 to-yellow-600/30 border-amber-400/50 text-amber-300',
-              'bg-gradient-to-r from-slate-400/20 to-slate-500/20 border-slate-300/40 text-slate-200',
-              'bg-gradient-to-r from-amber-700/20 to-amber-800/20 border-amber-600/40 text-amber-400',
+              'bg-linear-to-r from-amber-500/30 to-yellow-600/30 border-amber-400/50 text-amber-300',
+              'bg-linear-to-r from-slate-400/20 to-slate-500/20 border-slate-300/40 text-slate-200',
+              'bg-linear-to-r from-amber-700/20 to-amber-800/20 border-amber-600/40 text-amber-400',
               'bg-slate-900/60 border-slate-800 text-slate-300',
               'bg-slate-900/40 border-slate-800/60 text-slate-400'
             ];
@@ -92,7 +92,7 @@ export default function HostLeaderboard({ onNext }) {
             soundFx.playSelect();
             onNext();
           }}
-          className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold text-lg rounded-2xl shadow-xl shadow-emerald-950/60 transition-all cursor-pointer transform hover:scale-105 active:scale-95"
+          className="flex items-center gap-3 px-8 py-4 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold text-lg rounded-2xl shadow-xl shadow-emerald-950/60 transition-all cursor-pointer transform hover:scale-105 active:scale-95"
         >
           {isLastQuestion ? (
             <>
