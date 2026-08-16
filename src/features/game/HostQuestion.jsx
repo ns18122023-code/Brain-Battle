@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   selectCurrentQuestion,
   selectCurrentQuestionIndex,
   selectTimeRemaining,
+  selectQuestionStartTime,
   selectGame,
+  setTimeRemaining,
   decrementTimer
 } from './gameSlice';
 import { selectAnsweredCount, selectPlayerCount } from '../player/playersSlice';
@@ -17,27 +19,41 @@ export default function HostQuestion({ onTimeExpired, onEndQuestionEarly }) {
   const game = useSelector(selectGame);
   const currentQuestion = useSelector(selectCurrentQuestion);
   const questionIndex = useSelector(selectCurrentQuestionIndex);
-  const timeRemaining = useSelector(selectTimeRemaining);
+  const timeRemainingRedux = useSelector(selectTimeRemaining);
+  const questionStartTime = useSelector(selectQuestionStartTime);
   const answeredCount = useSelector(selectAnsweredCount);
   const playerCount = useSelector(selectPlayerCount);
 
   const totalQuestions = game.quiz?.questions?.length || 1;
   const totalTime = currentQuestion?.timeLimit || 20;
 
-  // Countdown effect
+  const [displayTime, setDisplayTime] = useState(totalTime);
+
+  // Robust Timestamp-Based Countdown Effect
   useEffect(() => {
-    if (timeRemaining > 0) {
-      const timer = setTimeout(() => {
-        dispatch(decrementTimer());
-        if (timeRemaining <= 5) {
-          soundFx.playTick();
-        }
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (timeRemaining === 0) {
-      onTimeExpired();
-    }
-  }, [timeRemaining, dispatch, onTimeExpired]);
+    const startTime = questionStartTime || Date.now();
+
+    const updateTimer = () => {
+      const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = Math.max(0, totalTime - elapsedSec);
+      
+      setDisplayTime(remaining);
+      dispatch(setTimeRemaining(remaining));
+
+      if (remaining <= 5 && remaining > 0) {
+        soundFx.playTick();
+      }
+
+      if (remaining === 0) {
+        onTimeExpired();
+      }
+    };
+
+    updateTimer(); // Initial call
+    const interval = setInterval(updateTimer, 500);
+
+    return () => clearInterval(interval);
+  }, [questionStartTime, totalTime, dispatch, onTimeExpired]);
 
   // Auto-expire question if all players have submitted answers
   useEffect(() => {
@@ -55,7 +71,7 @@ export default function HostQuestion({ onTimeExpired, onEndQuestionEarly }) {
     { name: 'Green', bg: 'kahoot-btn-green', icon: '■' }
   ];
 
-  const timerPercentage = (timeRemaining / totalTime) * 100;
+  const timerPercentage = (displayTime / totalTime) * 100;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 min-h-[85vh] flex flex-col justify-between space-y-6">
@@ -108,7 +124,7 @@ export default function HostQuestion({ onTimeExpired, onEndQuestionEarly }) {
                 cy="50"
                 r="42"
                 className={`fill-none transition-all duration-1000 ${
-                  timeRemaining <= 5 ? 'stroke-red-500' : 'stroke-purple-500'
+                  displayTime <= 5 ? 'stroke-red-500' : 'stroke-purple-500'
                 }`}
                 strokeWidth="10"
                 strokeDasharray="264"
@@ -117,8 +133,8 @@ export default function HostQuestion({ onTimeExpired, onEndQuestionEarly }) {
               />
             </svg>
             <div className="absolute text-center">
-              <div className={`text-4xl font-black ${timeRemaining <= 5 ? 'text-red-400 animate-ping' : 'text-white'}`}>
-                {timeRemaining}
+              <div className={`text-4xl font-black ${displayTime <= 5 ? 'text-red-400 animate-ping' : 'text-white'}`}>
+                {displayTime}
               </div>
               <div className="text-[10px] font-bold text-slate-400 uppercase">Sec Left</div>
             </div>

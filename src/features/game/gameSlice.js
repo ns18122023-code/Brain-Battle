@@ -6,6 +6,7 @@ const initialState = {
   quiz: null,
   currentQuestionIndex: 0,
   timeRemaining: 20,
+  questionStartTime: null, // Wall-clock timestamp when question started
   isTimerActive: false,
   hostId: null,
   updatedAt: 0
@@ -20,6 +21,7 @@ const gameSlice = createSlice({
       state.quiz = action.payload.quiz;
       state.status = 'LOBBY';
       state.currentQuestionIndex = 0;
+      state.questionStartTime = null;
       state.hostId = action.payload.hostId || 'host_' + Date.now();
       state.updatedAt = Date.now();
     },
@@ -33,6 +35,7 @@ const gameSlice = createSlice({
       state.status = 'QUESTION';
       const question = state.quiz?.questions?.[qIndex];
       state.timeRemaining = question?.timeLimit || 20;
+      state.questionStartTime = Date.now();
       state.isTimerActive = true;
       state.updatedAt = Date.now();
     },
@@ -55,10 +58,12 @@ const gameSlice = createSlice({
         state.status = 'QUESTION';
         const question = state.quiz.questions[state.currentQuestionIndex];
         state.timeRemaining = question?.timeLimit || 20;
+        state.questionStartTime = Date.now();
         state.isTimerActive = true;
       } else {
         state.status = 'PODIUM';
         state.isTimerActive = false;
+        state.questionStartTime = null;
       }
       state.updatedAt = Date.now();
     },
@@ -71,7 +76,10 @@ const gameSlice = createSlice({
       if (payload.gamePin) state.gamePin = payload.gamePin;
       if (payload.quiz) state.quiz = payload.quiz;
       if (payload.currentQuestionIndex !== undefined) state.currentQuestionIndex = payload.currentQuestionIndex;
-      if (payload.timeRemaining !== undefined) state.timeRemaining = payload.timeRemaining;
+      if (payload.questionStartTime) state.questionStartTime = payload.questionStartTime;
+      if (payload.timeRemaining !== undefined && !state.questionStartTime) {
+        state.timeRemaining = payload.timeRemaining;
+      }
       if (payload.isTimerActive !== undefined) state.isTimerActive = payload.isTimerActive;
       state.updatedAt = payload.updatedAt || Date.now();
     }
@@ -106,6 +114,8 @@ export const selectCurrentQuestion = (state) => {
 };
 
 export const selectTimeRemaining = (state) => state.game.timeRemaining;
+export const selectQuestionStartTime = (state) => state.game.questionStartTime;
 export const selectIsTimerActive = (state) => state.game.isTimerActive;
 
 export default gameSlice.reducer;
+
