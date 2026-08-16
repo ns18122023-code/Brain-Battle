@@ -85,7 +85,7 @@ export default function PlayerJoin({ initialPin, onJoined }) {
             <Gamepad2 className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-3xl font-black text-white tracking-tight">
-            Join <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-pink-400">Quiz Battle</span>
+            Join <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">Brain Battle</span>
           </h2>
           <p className="text-slate-400 text-xs font-semibold">
             {step === 1 ? 'Enter Game PIN to connect' : `Game PIN: #${pin}`}
