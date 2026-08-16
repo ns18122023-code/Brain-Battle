@@ -4,13 +4,13 @@ import { selectCurrentPlayer, selectPlayerRank } from './playersSlice';
 import { CheckCircle2, XCircle, Flame, Trophy } from 'lucide-react';
 import { soundFx } from '../../services/soundService';
 
-// Animated Points Count-Up Component
-function AnimatedCounter({ to, duration = 1000 }) {
-  const [count, setCount] = React.useState(0);
+// Smooth Points Count-Up Component
+function AnimatedCounter({ to, duration = 500 }) {
+  const end = parseInt(to, 10) || 0;
+  const [count, setCount] = React.useState(end);
 
   useEffect(() => {
-    const end = parseInt(to, 10);
-    if (isNaN(end) || end <= 0) {
+    if (end <= 0) {
       setCount(0);
       return;
     }
@@ -44,19 +44,21 @@ export default function PlayerFeedback() {
   const rankDiff = prevRank ? prevRank - currentRank : 0;
 
   useEffect(() => {
-    if (isCorrect) {
-      soundFx.playCorrect();
-    } else {
-      soundFx.playWrong();
+    if (typeof isCorrect === 'boolean') {
+      if (isCorrect) {
+        soundFx.playCorrect();
+      } else {
+        soundFx.playWrong();
+      }
     }
   }, [isCorrect]);
 
   if (!player) return null;
 
   return (
-    <div className="max-w-md mx-auto px-4 py-8 min-h-[85vh] flex flex-col justify-center text-center">
+    <div className="max-w-md mx-auto px-4 py-8 min-h-[85vh] flex flex-col justify-center text-center animate-fade-in">
       <div
-        className={`glass-panel p-8 rounded-3xl border-4 shadow-2xl space-y-6 transition-all duration-500 ${isCorrect
+        className={`glass-panel p-8 rounded-3xl border-4 shadow-2xl space-y-6 transition-all duration-300 transform scale-100 ${isCorrect
             ? 'border-emerald-500 bg-emerald-950/30'
             : 'border-red-500 bg-red-950/30'
           }`}
@@ -64,16 +66,16 @@ export default function PlayerFeedback() {
         {/* Banner */}
         <div className="space-y-2">
           {isCorrect ? (
-            <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto animate-bounce">
+            <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
               <CheckCircle2 className="w-12 h-12" />
             </div>
           ) : (
-            <div className="w-20 h-20 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto">
+            <div className="w-20 h-20 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto shadow-lg shadow-red-500/20">
               <XCircle className="w-12 h-12" />
             </div>
           )}
 
-          <h2 className="text-3xl font-black text-white">
+          <h2 className="text-3xl font-black text-white tracking-tight">
             {isCorrect ? 'Correct! 🎉' : 'Incorrect ❌'}
           </h2>
         </div>
