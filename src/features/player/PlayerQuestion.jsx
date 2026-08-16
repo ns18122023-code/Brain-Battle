@@ -100,7 +100,7 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
     : totalTime - displayTime;
 
   return (
-    <div className="max-w-md mx-auto px-4 py-6 min-h-[85vh] flex flex-col justify-between space-y-6">
+    <div className="max-w-md mx-auto px-4 py-6 min-h-[85vh] flex flex-col justify-between space-y-6 animate-fade-in">
       {/* Top Header & Visual Progress */}
       <div className="space-y-3">
         <div className="flex items-center justify-between glass-panel p-4 rounded-2xl border border-purple-500/30">

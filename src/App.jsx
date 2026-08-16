@@ -66,6 +66,7 @@ export default function App() {
   // Ref container for latest state inside event listeners
   const stateRef = useRef({});
   stateRef.current = { appMode, gameStatus, game, playersMap };
+  const lastSyncTimestampRef = useRef(0);
 
   // 0. Initialize Firebase & Load Quizzes on App Mount
   useEffect(() => {
@@ -84,6 +85,15 @@ export default function App() {
 
     const unsubscribe = subscribeToGameSync(gamePin, (syncedData) => {
       if (!syncedData) return;
+
+      // Deduplicate updates by timestamp to avoid redundant processing from multiple channels (ntfy, Firestore, BroadcastChannel, localStorage)
+      if (syncedData.updatedAt && syncedData.updatedAt <= lastSyncTimestampRef.current) {
+        return;
+      }
+      if (syncedData.updatedAt) {
+        lastSyncTimestampRef.current = syncedData.updatedAt;
+      }
+
       const { appMode: currentAppMode, gameStatus: currentStatus, game: currentGame, playersMap: currentPlayers } = stateRef.current;
 
       // Handle Event: New Player Joined

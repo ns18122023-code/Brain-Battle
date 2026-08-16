@@ -54,7 +54,7 @@ export default function PlayerFeedback() {
   if (!player) return null;
 
   return (
-    <div className="max-w-md mx-auto px-4 py-8 min-h-[85vh] flex flex-col justify-center text-center">
+    <div className="max-w-md mx-auto px-4 py-8 min-h-[85vh] flex flex-col justify-center text-center animate-fade-in">
       <div
         className={`glass-panel p-8 rounded-3xl border-4 shadow-2xl space-y-6 transition-all duration-500 ${isCorrect
             ? 'border-emerald-500 bg-emerald-950/30'
