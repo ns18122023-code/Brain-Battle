@@ -132,6 +132,7 @@ export default function App() {
       status: extraPayload.status || gameStatus,
       quiz: game.quiz,
       currentQuestionIndex: extraPayload.currentQuestionIndex !== undefined ? extraPayload.currentQuestionIndex : game.currentQuestionIndex,
+      questionStartTime: extraPayload.questionStartTime !== undefined ? extraPayload.questionStartTime : game.questionStartTime,
       timeRemaining: extraPayload.timeRemaining !== undefined ? extraPayload.timeRemaining : game.timeRemaining,
       isTimerActive: extraPayload.isTimerActive !== undefined ? extraPayload.isTimerActive : game.isTimerActive,
       playersMap: extraPayload.playersMap || playersMap

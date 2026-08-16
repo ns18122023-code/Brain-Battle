@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectCurrentQuestion, selectTimeRemaining, selectCurrentQuestionIndex, selectGame } from '../game/gameSlice';
+import { selectCurrentQuestion, selectTimeRemaining, selectQuestionStartTime, selectCurrentQuestionIndex, selectGame } from '../game/gameSlice';
 import { selectCurrentPlayer, submitAnswerThunk } from './playersSlice';
 import { Clock, CheckCircle } from 'lucide-react';
 import { soundFx } from '../../services/soundService';
@@ -11,12 +11,29 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
   const game = useSelector(selectGame);
   const currentQuestion = useSelector(selectCurrentQuestion);
   const questionIndex = useSelector(selectCurrentQuestionIndex);
-  const timeRemaining = useSelector(selectTimeRemaining);
+  const timeRemainingRedux = useSelector(selectTimeRemaining);
+  const questionStartTime = useSelector(selectQuestionStartTime);
   const player = useSelector(selectCurrentPlayer);
 
   const totalTime = currentQuestion?.timeLimit || 20;
-  const percentage = (timeRemaining / totalTime) * 100;
   const hasAnswered = player?.answeredCurrentQuestion;
+  const [displayTime, setDisplayTime] = useState(totalTime);
+
+  useEffect(() => {
+    const startTime = questionStartTime || Date.now();
+    const updateTimer = () => {
+      const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = Math.max(0, totalTime - elapsedSec);
+      setDisplayTime(remaining);
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 500);
+    return () => clearInterval(interval);
+  }, [questionStartTime, totalTime]);
+
+  if (!currentQuestion) return null;
+
+  const percentage = (displayTime / totalTime) * 100;
 
   const handleSelectOption = (index) => {
     if (!player || player.answeredCurrentQuestion) return;
@@ -30,7 +47,7 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
       submitAnswerThunk({
         playerId: player.id,
         optionIndex: index,
-        timeRemaining,
+        timeRemaining: displayTime,
         totalTime,
         isCorrect
       })
@@ -58,9 +75,7 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [player, hasAnswered, currentQuestion, timeRemaining]);
-
-  if (!currentQuestion) return null;
+  }, [player, hasAnswered, currentQuestion, displayTime]);
 
   const optionStyles = [
     { name: 'Red', bg: 'kahoot-btn-red', icon: '▲' },
@@ -71,16 +86,16 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
 
   // Dynamic progress bar color
   let barColor = 'bg-gradient-to-r from-emerald-500 to-teal-400';
-  if (timeRemaining <= 5) {
+  if (displayTime <= 5) {
     barColor = 'bg-gradient-to-r from-red-500 to-pink-500 animate-pulse';
-  } else if (timeRemaining <= 10) {
+  } else if (displayTime <= 10) {
     barColor = 'bg-gradient-to-r from-amber-500 to-orange-400';
   }
 
   // Calculate locked speed
   const lockedTime = player?.answerTimeRemaining !== null && player?.answerTimeRemaining !== undefined
     ? totalTime - player.answerTimeRemaining
-    : totalTime - timeRemaining;
+    : totalTime - displayTime;
 
   return (
     <div className="max-w-md mx-auto px-4 py-6 min-h-[85vh] flex flex-col justify-between space-y-6">
@@ -92,7 +107,7 @@ export default function PlayerQuestion({ onAnswerSubmitted }) {
           </span>
 
           <div className="flex items-center gap-1.5 font-bold text-amber-300 text-sm">
-            <Clock className="w-4 h-4 animate-spin-slow" /> {timeRemaining}s Left
+            <Clock className="w-4 h-4" /> {displayTime}s Left
           </div>
         </div>
 
