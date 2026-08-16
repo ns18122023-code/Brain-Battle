@@ -183,6 +183,13 @@ export default function App() {
         dispatch(syncPlayersFromExternal(syncedData.playersMap));
       }
 
+      // If question index changed for a question state, reset player answered status locally
+      if (syncedData.status === 'QUESTION' && syncedData.currentQuestionIndex !== undefined) {
+        if (stateRef.current.game.currentQuestionIndex !== syncedData.currentQuestionIndex) {
+          dispatch(resetQuestionState());
+        }
+      }
+
       // Update Redux Game state
       dispatch(updateGameFromSync(syncedData));
 
@@ -209,6 +216,24 @@ export default function App() {
       }
     }
   }, [queryPin, dispatch]);
+
+  // Helper to construct clean reset players map for new questions
+  const getResetPlayersMap = (currentMap) => {
+    const cleanMap = {};
+    Object.keys(currentMap || {}).forEach((id) => {
+      cleanMap[id] = {
+        ...currentMap[id],
+        answeredCurrentQuestion: false,
+        lastAnswerIndex: null,
+        isCorrect: null,
+        lastPoints: 0,
+        lastBasePoints: 0,
+        lastStreakBonus: 0,
+        answerTimeRemaining: null
+      };
+    });
+    return cleanMap;
+  };
 
   // Helper to publish Redux state updates to real-time sync channel
   const syncToCloud = (extraPayload = {}) => {
@@ -249,13 +274,14 @@ export default function App() {
     dispatch(resetQuestionState());
     dispatch(startQuestion(0));
     const now = Date.now();
+    const cleanMap = getResetPlayersMap(playersMap);
     const nextState = {
       type: 'SYNC_FULL_STATE',
       status: 'QUESTION',
       currentQuestionIndex: 0,
       questionStartTime: now,
       quiz: game.quiz,
-      playersMap
+      playersMap: cleanMap
     };
     syncToCloud(nextState);
   };
@@ -277,10 +303,15 @@ export default function App() {
     // Check if game reached podium or next question
     const nextIndex = game.currentQuestionIndex + 1;
     if (nextIndex < (game.quiz?.questions?.length || 0)) {
+      const now = Date.now();
+      const cleanMap = getResetPlayersMap(playersMap);
       const nextState = {
+        type: 'SYNC_FULL_STATE',
         status: 'QUESTION',
         currentQuestionIndex: nextIndex,
-        playersMap
+        questionStartTime: now,
+        quiz: game.quiz,
+        playersMap: cleanMap
       };
       syncToCloud(nextState);
     } else {
