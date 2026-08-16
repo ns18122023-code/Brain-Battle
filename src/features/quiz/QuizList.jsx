@@ -124,7 +124,7 @@ export default function QuizList({ onCreateNew, onEditQuiz, onStartGame }) {
                 <h3 className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors line-clamp-1">
                   {quiz.title}
                 </h3>
-                <p className="text-slate-400 text-sm line-clamp-2 min-h-[40px]">
+                <p className="text-slate-400 text-sm line-clamp-2 min-h-10">
                   {quiz.description || 'No description provided.'}
                 </p>
               </div>

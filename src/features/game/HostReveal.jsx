@@ -58,13 +58,13 @@ export default function HostReveal({ onShowLeaderboard }) {
                 >
                   {isCorrect && (
                     <div className="absolute -top-4 w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border-2 border-white">
-                      <Check className="w-5 h-5 stroke-[3]" />
+                      <Check className="w-5 h-5 stroke-3" />
                     </div>
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300">
                   <span className="text-sm">{style.icon}</span>
-                  <span className="truncate max-w-[100px]">{opt.text || `Option ${idx + 1}`}</span>
+                  <span className="truncate max-w-25">{opt.text || `Option ${idx + 1}`}</span>
                 </div>
               </div>
             );

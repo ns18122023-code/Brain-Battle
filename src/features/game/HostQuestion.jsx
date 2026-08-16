@@ -166,7 +166,7 @@ export default function HostQuestion({ onTimeExpired, onEndQuestionEarly }) {
         </div>
 
         {/* Question Text Box */}
-        <div className="md:col-span-9 glass-panel p-8 rounded-3xl border-2 border-purple-500/40 text-center flex items-center justify-center min-h-[160px]">
+        <div className="md:col-span-9 glass-panel p-8 rounded-3xl border-2 border-purple-500/40 text-center flex items-center justify-center min-h-40">
           <h2 className="text-2xl md:text-3xl font-extrabold text-white leading-tight">
             {currentQuestion.question || '(No Question Text)'}
           </h2>

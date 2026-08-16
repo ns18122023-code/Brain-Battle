@@ -246,7 +246,7 @@ export default function QuizBuilder({ initialQuiz, onCancel, onSaved }) {
               </div>
             </div>
 
-            <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-87.5 overflow-y-auto pr-1">
               {questions.map((q, idx) => (
                 <div
                   key={q.id}
@@ -339,7 +339,7 @@ export default function QuizBuilder({ initialQuiz, onCancel, onSaved }) {
 
               {/* Options Grid */}
               <div>
-                <label className="block text-sm font-semibold text-slate-300 mb-3 flex items-center justify-between">
+                <label className="flex text-sm font-semibold text-slate-300 mb-3 items-center justify-between">
                   <span>Answer Options</span>
                   <span className="text-xs text-slate-400 font-normal">
                     Click the radio checkmark next to the correct answer!
