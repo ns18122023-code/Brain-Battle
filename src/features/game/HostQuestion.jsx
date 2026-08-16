@@ -62,7 +62,30 @@ export default function HostQuestion({ onTimeExpired, onEndQuestionEarly }) {
     }
   }, [answeredCount, playerCount, onTimeExpired]);
 
-  if (!currentQuestion) return null;
+  // Fallback UI if question data is missing/malformed (prevents blank screen)
+  if (!currentQuestion) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-6">
+        <div className="glass-panel p-8 rounded-3xl border border-purple-500/30 space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto text-2xl font-bold">
+            ⚠️
+          </div>
+          <h2 className="text-2xl font-bold text-white">Question Data Not Available</h2>
+          <p className="text-slate-300 text-sm">
+            Question #{questionIndex + 1} could not be loaded or has no valid question content.
+          </p>
+          <div className="flex items-center justify-center gap-4 pt-2">
+            <button
+              onClick={() => onEndQuestionEarly && onEndQuestionEarly()}
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-2xl text-sm transition-all cursor-pointer shadow-lg"
+            >
+              Skip Question ➔
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const optionStyles = [
     { name: 'Red', bg: 'kahoot-btn-red', icon: '▲' },
@@ -72,6 +95,7 @@ export default function HostQuestion({ onTimeExpired, onEndQuestionEarly }) {
   ];
 
   const timerPercentage = (displayTime / totalTime) * 100;
+  const safeOptions = Array.isArray(currentQuestion.options) ? currentQuestion.options : [];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 min-h-[85vh] flex flex-col justify-between space-y-6">
@@ -144,14 +168,14 @@ export default function HostQuestion({ onTimeExpired, onEndQuestionEarly }) {
         {/* Question Text Box */}
         <div className="md:col-span-9 glass-panel p-8 rounded-3xl border-2 border-purple-500/40 text-center flex items-center justify-center min-h-[160px]">
           <h2 className="text-2xl md:text-3xl font-extrabold text-white leading-tight">
-            {currentQuestion.question}
+            {currentQuestion.question || '(No Question Text)'}
           </h2>
         </div>
       </div>
 
       {/* Answer Options Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-        {currentQuestion.options.map((opt, idx) => {
+        {safeOptions.map((opt, idx) => {
           if (currentQuestion.type === 'true_false' && idx >= 2) return null;
           const style = optionStyles[idx % optionStyles.length];
 
@@ -163,7 +187,7 @@ export default function HostQuestion({ onTimeExpired, onEndQuestionEarly }) {
               <span className="w-10 h-10 rounded-xl bg-black/20 flex items-center justify-center text-2xl shrink-0">
                 {style.icon}
               </span>
-              <span className="truncate">{opt.text || `Option ${idx + 1}`}</span>
+              <span className="truncate">{opt?.text || `Option ${idx + 1}`}</span>
             </div>
           );
         })}
