@@ -113,6 +113,71 @@ export default function App() {
         return;
       }
 
+      // Handle Event: Player Submitted Answer
+      if (syncedData.type === 'PLAYER_ANSWER_SUBMITTED' && syncedData.playerId && syncedData.playerData) {
+        if (currentAppMode === 'HOST_GAME') {
+          dispatch(syncPlayersFromExternal({
+            [syncedData.playerId]: syncedData.playerData
+          }));
+
+          setTimeout(() => {
+            const updatedMap = {
+              ...stateRef.current.playersMap,
+              [syncedData.playerId]: syncedData.playerData
+            };
+            publishGameSync(gamePin, {
+              type: 'SYNC_FULL_STATE',
+              gamePin,
+              status: currentStatus,
+              quiz: currentGame.quiz,
+              currentQuestionIndex: currentGame.currentQuestionIndex,
+              questionStartTime: currentGame.questionStartTime,
+              timeRemaining: currentGame.timeRemaining,
+              isTimerActive: currentGame.isTimerActive,
+              playersMap: updatedMap
+            });
+          }, 100);
+        }
+        return;
+      }
+
+      // Handle Event: Player Ready Toggled
+      if (syncedData.type === 'PLAYER_READY_TOGGLED' && syncedData.playerId) {
+        if (currentAppMode === 'HOST_GAME') {
+          const updatedPlayer = {
+            ...currentPlayers[syncedData.playerId],
+            isReady: syncedData.isReady
+          };
+          dispatch(syncPlayersFromExternal({
+            [syncedData.playerId]: updatedPlayer
+          }));
+
+          setTimeout(() => {
+            const updatedMap = {
+              ...stateRef.current.playersMap,
+              [syncedData.playerId]: updatedPlayer
+            };
+            publishGameSync(gamePin, {
+              type: 'SYNC_FULL_STATE',
+              gamePin,
+              status: currentStatus,
+              quiz: currentGame.quiz,
+              currentQuestionIndex: currentGame.currentQuestionIndex,
+              questionStartTime: currentGame.questionStartTime,
+              timeRemaining: currentGame.timeRemaining,
+              isTimerActive: currentGame.isTimerActive,
+              playersMap: updatedMap
+            });
+          }, 100);
+        }
+        return;
+      }
+
+      // If Host, ignore SYNC_FULL_STATE from other clients to prevent state corruption
+      if (syncedData.type === 'SYNC_FULL_STATE' && currentAppMode === 'HOST_GAME') {
+        return;
+      }
+
       // Update Redux Game state
       dispatch(updateGameFromSync(syncedData));
 
@@ -238,27 +303,31 @@ export default function App() {
     });
   };
 
-  const handlePlayerAnswerSubmitted = () => {
-    // Sync answer submission back to host real-time layer
-    setTimeout(() => {
-      syncToCloud();
-    }, 100);
+  const handlePlayerAnswerSubmitted = (updatedPlayerData) => {
+    if (currentPlayer && gamePin && updatedPlayerData) {
+      publishGameSync(gamePin, {
+        type: 'PLAYER_ANSWER_SUBMITTED',
+        gamePin,
+        playerId: currentPlayer.id,
+        playerData: updatedPlayerData
+      });
+    }
   };
-
+ 
   const handlePlayerToggleReady = () => {
     if (currentPlayer && gamePin) {
-      const updatedPlayers = {
-        ...playersMap,
-        [currentPlayer.id]: {
-          ...playersMap[currentPlayer.id],
-          isReady: !playersMap[currentPlayer.id]?.isReady
-        }
-      };
+      const isReady = !playersMap[currentPlayer.id]?.isReady;
       
       // Toggle locally
       dispatch(togglePlayerReady(currentPlayer.id));
-      // Publish to cloud
-      publishGameSync(gamePin, { playersMap: updatedPlayers });
+      
+      // Publish event to cloud
+      publishGameSync(gamePin, {
+        type: 'PLAYER_READY_TOGGLED',
+        gamePin,
+        playerId: currentPlayer.id,
+        isReady
+      });
     }
   };
 
