@@ -205,16 +205,19 @@ export default function App() {
   // Helper to clear active session storage
   const clearActiveSession = () => {
     try {
+      sessionStorage.removeItem('quiz_battle_active_session');
+      sessionStorage.removeItem('quiz_battle_game_pin');
+      sessionStorage.removeItem('quiz_battle_player_id');
       localStorage.removeItem('quiz_battle_active_session');
       localStorage.removeItem('quiz_battle_game_pin');
       localStorage.removeItem('quiz_battle_player_id');
     } catch (e) {}
   };
 
-  // 1b. Smart Session Persistence: Auto-resume active game on page reload for both Host and Player
+  // 1b. Smart Session Persistence: Auto-resume active game on page reload for both Host and Player (Tab Isolated)
   useEffect(() => {
     try {
-      const activeSessionRaw = localStorage.getItem('quiz_battle_active_session');
+      const activeSessionRaw = sessionStorage.getItem('quiz_battle_active_session') || localStorage.getItem('quiz_battle_active_session');
       if (activeSessionRaw) {
         const activeSession = JSON.parse(activeSessionRaw);
 
@@ -303,13 +306,14 @@ export default function App() {
     dispatch(resetAllPlayers());
     setAppMode('HOST_GAME');
 
-    // Save active session for Host persistence
+    // Save tab-isolated active session for Host persistence
     try {
-      localStorage.setItem('quiz_battle_active_session', JSON.stringify({
+      const sessionData = JSON.stringify({
         role: 'HOST',
         gamePin: generatedPin,
         appMode: 'HOST_GAME'
-      }));
+      });
+      sessionStorage.setItem('quiz_battle_active_session', sessionData);
     } catch (e) {}
 
     // Publish initial lobby state
@@ -377,16 +381,17 @@ export default function App() {
   const handlePlayerJoined = (enteredPin, playerData) => {
     dispatch(addPlayer(playerData));
     
-    // Save player ID, PIN, and active session to localStorage for session persistence
-    localStorage.setItem('quiz_battle_player_id', playerData.id);
-    localStorage.setItem('quiz_battle_game_pin', enteredPin);
+    // Save tab-isolated player ID, PIN, and active session to sessionStorage for session persistence
     try {
-      localStorage.setItem('quiz_battle_active_session', JSON.stringify({
+      const sessionData = JSON.stringify({
         role: 'PLAYER',
         gamePin: enteredPin,
         appMode: 'PLAYER',
         playerId: playerData.id
-      }));
+      });
+      sessionStorage.setItem('quiz_battle_active_session', sessionData);
+      sessionStorage.setItem('quiz_battle_player_id', playerData.id);
+      sessionStorage.setItem('quiz_battle_game_pin', enteredPin);
     } catch (e) {}
     
     // Dispatch gamePin to Redux so player starts syncing immediately
