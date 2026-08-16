@@ -22,6 +22,8 @@ export const submitAnswerThunk = createAsyncThunk(
         score: player.score + totalAdded,
         streak: newStreak,
         lastPoints: totalAdded,
+        lastBasePoints: pointsEarned,
+        lastStreakBonus: streakBonus,
         lastAnswerIndex: optionIndex,
         isCorrect: isCorrect,
         answeredCurrentQuestion: true,
@@ -55,18 +57,35 @@ const playersSlice = createSlice({
         score: p.score || 0,
         streak: p.streak || 0,
         lastPoints: p.lastPoints || 0,
+        lastBasePoints: p.lastBasePoints || 0,
+        lastStreakBonus: p.lastStreakBonus || 0,
         lastAnswerIndex: p.lastAnswerIndex ?? null,
         isCorrect: p.isCorrect ?? null,
         answeredCurrentQuestion: p.answeredCurrentQuestion ?? false,
-        answerTimeRemaining: p.answerTimeRemaining ?? null
+        answerTimeRemaining: p.answerTimeRemaining ?? null,
+        previousRank: p.previousRank || null,
+        isReady: p.isReady || false
       };
     },
     resetQuestionState: (state) => {
+      // Calculate current ranks before resetting
+      const sortedPlayers = Object.values(state.players || {}).sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return b.streak - a.streak;
+      });
+      const ranks = {};
+      sortedPlayers.forEach((p, idx) => {
+        ranks[p.id] = idx + 1;
+      });
+
       Object.keys(state.players).forEach((id) => {
+        state.players[id].previousRank = ranks[id] || null;
         state.players[id].lastAnswerIndex = null;
         state.players[id].isCorrect = null;
         state.players[id].answeredCurrentQuestion = false;
         state.players[id].lastPoints = 0;
+        state.players[id].lastBasePoints = 0;
+        state.players[id].lastStreakBonus = 0;
         state.players[id].answerTimeRemaining = null;
       });
     },
@@ -80,6 +99,12 @@ const playersSlice = createSlice({
           ...state.players,
           ...action.payload
         };
+      }
+    },
+    togglePlayerReady: (state, action) => {
+      const playerId = action.payload;
+      if (state.players[playerId]) {
+        state.players[playerId].isReady = !state.players[playerId].isReady;
       }
     }
   },
@@ -96,7 +121,8 @@ export const {
   addPlayer,
   resetQuestionState,
   resetAllPlayers,
-  syncPlayersFromExternal
+  syncPlayersFromExternal,
+  togglePlayerReady
 } = playersSlice.actions;
 
 // Selectors

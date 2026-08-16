@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { selectGamePin, selectGame } from './gameSlice';
 import { selectSortedLeaderboard, selectPlayerCount } from '../player/playersSlice';
 import { QRCodeSVG } from 'qrcode.react';
-import { Users, Play, Copy, Check, QrCode, ExternalLink, Sparkles } from 'lucide-react';
+import { Users, Play, Copy, Check, QrCode, Sparkles } from 'lucide-react';
 import { soundFx } from '../../services/soundService';
 
 export default function HostLobby({ onStartGame }) {
@@ -52,7 +52,7 @@ export default function HostLobby({ onStartGame }) {
               <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
                 GAME PIN
               </div>
-              <div className="text-5xl md:text-7xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-pink-500 drop-shadow-lg">
+              <div className="text-5xl md:text-7xl font-black tracking-widest text-transparent bg-clip-text bg-linear-to-r from-yellow-300 via-amber-400 to-pink-500 drop-shadow-lg">
                 {gamePin}
               </div>
             </div>
@@ -121,7 +121,7 @@ export default function HostLobby({ onStartGame }) {
         </div>
 
         {/* Player Chips Grid */}
-        <div className="min-h-[200px] max-h-[350px] overflow-y-auto">
+        <div className="min-h-50 max-h-87.5 overflow-y-auto">
           {playerCount === 0 ? (
             <div className="h-48 flex flex-col items-center justify-center text-slate-500 space-y-3">
               <Users className="w-12 h-12 stroke-[1.5] text-slate-600 animate-bounce" />
@@ -148,7 +148,7 @@ export default function HostLobby({ onStartGame }) {
         <div className="flex items-center justify-end pt-4 border-t border-slate-700/50">
           <button
             onClick={handleStart}
-            className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-emerald-950/60 transition-all cursor-pointer transform hover:scale-105 active:scale-95"
+            className="flex items-center gap-3 px-8 py-4 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-emerald-950/60 transition-all cursor-pointer transform hover:scale-105 active:scale-95"
           >
             <Play className="w-6 h-6 fill-white" /> Start Game Now
           </button>

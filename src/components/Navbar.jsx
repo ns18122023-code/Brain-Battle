@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Gamepad2, Volume2, VolumeX, Sparkles, ExternalLink, HelpCircle } from 'lucide-react';
+import { Gamepad2, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import { soundFx } from '../services/soundService';
 
 export default function Navbar({ activeMode, onSwitchMode, onLaunchDemo }) {
@@ -15,12 +15,12 @@ export default function Navbar({ activeMode, onSwitchMode, onLaunchDemo }) {
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* Brand Logo */}
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => onSwitchMode('HOST_DASHBOARD')}>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 flex items-center justify-center shadow-lg shadow-purple-950/50">
+          <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-purple-600 via-pink-600 to-amber-500 flex items-center justify-center shadow-lg shadow-purple-950/50">
             <Gamepad2 className="w-6 h-6 text-white" />
           </div>
           <div>
             <h1 className="text-xl font-black text-white tracking-tight leading-none">
-              Quiz <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">Battle</span>
+              Quiz <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-pink-400">Battle</span>
             </h1>
             <span className="text-[10px] font-extrabold text-amber-400 tracking-widest uppercase">
               Kahoot Clone
@@ -63,7 +63,7 @@ export default function Navbar({ activeMode, onSwitchMode, onLaunchDemo }) {
               soundFx.playSelect();
               if (onLaunchDemo) onLaunchDemo();
             }}
-            className="hidden md:flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-400/40 text-amber-300 rounded-xl text-xs font-extrabold transition-all cursor-pointer"
+            className="hidden md:flex items-center gap-1.5 px-3.5 py-1.5 bg-linear-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-400/40 text-amber-300 rounded-xl text-xs font-extrabold transition-all cursor-pointer"
             title="Launch multi-player live demo in tabs"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Quick Multi-Tab Demo

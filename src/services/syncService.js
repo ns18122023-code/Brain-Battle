@@ -3,7 +3,6 @@ import { db, isFirebaseReady } from "./firebase";
 
 const channels = {};
 
-
 // ==========================================
 // BROADCAST CHANNEL
 // ==========================================
@@ -25,11 +24,14 @@ function getBroadcastChannel(gamePin) {
   return channels[gamePin];
 }
 
+// ==========================================
+// PUBLISH GAME DATA
+// ==========================================
+
 /**
  * Publish game update to ntfy.sh (Cross-Device Cloud Relay), Firebase Firestore, and BroadcastChannel
  */
 export async function publishGameSync(gamePin, payload) {
-
   if (!gamePin) {
     return;
   }
@@ -42,32 +44,23 @@ export async function publishGameSync(gamePin, payload) {
 
   // 1. BroadcastChannel (for sub-millisecond local multi-tab sync on same browser)
   const bc = getBroadcastChannel(gamePin);
-
   if (bc) {
     try {
       bc.postMessage(fullData);
     } catch (e) {}
   }
 
-
-  // ------------------------------------------
-  // 2. localStorage
-  // ------------------------------------------
-
+  // 2. localStorage backup sync for multi-tab state fallback
   try {
-
     localStorage.setItem(
       `quiz_battle_state_${gamePin}`,
       JSON.stringify(fullData)
     );
-
   } catch (error) {
-
     console.warn(
       "localStorage sync failed:",
       error
     );
-
   }
 
   // 3. ntfy.sh Zero-Config Global Cloud Relay (Works across physical phones, PCs, and different networks worldwide!)
@@ -81,9 +74,7 @@ export async function publishGameSync(gamePin, payload) {
 
   // 4. Firebase Firestore Real-Time Cloud Sync (if configured with valid keys)
   if (isFirebaseReady && db) {
-
     try {
-
       const gameRef = doc(
         db,
         "games",
@@ -102,74 +93,92 @@ export async function publishGameSync(gamePin, payload) {
         "Game successfully synced to Firebase:",
         gamePin
       );
-
     } catch (error) {
-
       console.error(
         "Firebase sync failed:",
         error
       );
-
     }
-
   }
 }
 
+<<<<<<< HEAD
+=======
+// ==========================================
+// SUBSCRIBE TO GAME DATA
+// ==========================================
+
+>>>>>>> 866b1742be63a6a122d10272f3404b9a0fbcf860
 /**
  * Subscribe to Game updates from ntfy.sh, Firebase Firestore, BroadcastChannel & LocalStorage
  */
 export function subscribeToGameSync(gamePin, onUpdateCallback) {
+<<<<<<< HEAD
   if (!gamePin) return () => {};
+=======
+  if (!gamePin) {
+    return () => {};
+  }
+>>>>>>> 866b1742be63a6a122d10272f3404b9a0fbcf860
 
   const unsubscribes = [];
 
-
-  // ------------------------------------------
-  // 1. BroadcastChannel
-  // ------------------------------------------
-
+  // 1. Listen to Local BroadcastChannel
   const bc = getBroadcastChannel(gamePin);
-
   if (bc) {
-
     const handleBcMessage = (event) => {
-
       if (event.data) {
-
         console.log(
           "BroadcastChannel update:",
           event.data
         );
-
         onUpdateCallback(event.data);
-
       }
-
     };
-
     bc.addEventListener(
       "message",
       handleBcMessage
     );
-
     unsubscribes.push(() => {
-
       bc.removeEventListener(
         "message",
         handleBcMessage
       );
-
     });
-
   }
 
-
-  // ------------------------------------------
-  // 2. localStorage
-  // ------------------------------------------
-
+  // 2. Listen to window storage events
   const handleStorage = (event) => {
+    if (
+      event.key === `quiz_battle_state_${gamePin}` &&
+      event.newValue
+    ) {
+      try {
+        const parsed = JSON.parse(event.newValue);
+        console.log(
+          "localStorage update:",
+          parsed
+        );
+        onUpdateCallback(parsed);
+      } catch (error) {
+        console.warn(
+          "Could not parse localStorage data"
+        );
+      }
+    }
+  };
+  window.addEventListener(
+    "storage",
+    handleStorage
+  );
+  unsubscribes.push(() => {
+    window.removeEventListener(
+      "storage",
+      handleStorage
+    );
+  });
 
+<<<<<<< HEAD
     if (
       event.key ===
         `quiz_battle_state_${gamePin}` &&
@@ -257,60 +266,83 @@ export function subscribeToGameSync(gamePin, onUpdateCallback) {
     } catch (e) {
       console.warn("Firestore subscription error:", e.message);
     }
+=======
+  // 3. Listen to ntfy.sh Global Cloud Relay SSE (Server-Sent Events) for real-time mobile/cross-device sync
+  try {
+    const sseUrl = `https://ntfy.sh/quiz_battle_pin_${gamePin}/json`;
+    const eventSource = new EventSource(sseUrl);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === 'message' && data.message) {
+          const payload = JSON.parse(data.message);
+          onUpdateCallback(payload);
+        }
+      } catch (e) {}
+    };
+
+    unsubscribes.push(() => {
+      try {
+        eventSource.close();
+      } catch (e) {}
+    });
+  } catch (e) {
+    console.warn("ntfy subscription error:", e.message);
   }
 
+  // 4. Listen to Firebase Firestore `onSnapshot` (if configured)
+  if (isFirebaseReady && db) {
+    try {
+      const gameRef = doc(db, 'games', String(gamePin));
+      const unsubFs = onSnapshot(
+        gameRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const gameData = docSnap.data();
+            console.log(
+              "Firebase update:",
+              gameData
+            );
+            onUpdateCallback(gameData);
+          }
+        },
+        (error) => {
+          console.warn("Firestore snapshot listener note:", error.message);
+        }
+      );
+      unsubscribes.push(unsubFs);
+    } catch (e) {
+      console.warn("Firestore subscription error:", e.message);
+    }
+>>>>>>> 866b1742be63a6a122d10272f3404b9a0fbcf860
+  }
 
-  // ------------------------------------------
-  // INITIAL LOCAL CACHE
-  // ------------------------------------------
-
+  // Initial fetch check from localStorage
   try {
-
     const cached = localStorage.getItem(
       `quiz_battle_state_${gamePin}`
     );
-
     if (cached) {
-
-      onUpdateCallback(
-        JSON.parse(cached)
-      );
-
+      onUpdateCallback(JSON.parse(cached));
     }
-
   } catch (error) {
-
     console.warn(
       "Could not read cached game data"
     );
-
   }
 
-
-  // ------------------------------------------
   // CLEANUP
-  // ------------------------------------------
-
   return () => {
-
-    unsubscribes.forEach(
-      (unsubscribe) => {
-
-        try {
-
-          unsubscribe();
-
-        } catch (error) {
-
-          console.warn(
-            "Cleanup error:",
-            error
-          );
-
-        }
-
+    unsubscribes.forEach((unsubscribe) => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn(
+          "Cleanup error:",
+          error
+        );
       }
-    );
-
+    });
   };
 }

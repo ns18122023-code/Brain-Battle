@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { selectCurrentPlayer, selectPlayerRank } from './playersSlice';
 import confetti from 'canvas-confetti';
-import { Trophy, RotateCcw, Award, Sparkles } from 'lucide-react';
+import { Trophy, RotateCcw, Sparkles } from 'lucide-react';
 import { soundFx } from '../../services/soundService';
 
 export default function PlayerPodium({ onPlayAgain }) {
@@ -32,7 +32,7 @@ export default function PlayerPodium({ onPlayAgain }) {
           <h2 className="text-3xl font-black text-white">{player.nickname}</h2>
         </div>
 
-        <div className="bg-gradient-to-tr from-purple-950 to-pink-950/60 p-6 rounded-2xl border border-purple-500/40 space-y-2">
+        <div className="bg-linear-to-tr from-purple-950 to-pink-950/60 p-6 rounded-2xl border border-purple-500/40 space-y-2">
           <div className="text-xs font-bold text-slate-300 uppercase tracking-widest">
             Final Rank
           </div>
@@ -49,7 +49,7 @@ export default function PlayerPodium({ onPlayAgain }) {
             soundFx.playSelect();
             onPlayAgain();
           }}
-          className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-extrabold text-lg rounded-2xl shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+          className="w-full py-4 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-extrabold text-lg rounded-2xl shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2"
         >
           <RotateCcw className="w-5 h-5" /> Play Another Game
         </button>

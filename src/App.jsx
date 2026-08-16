@@ -32,7 +32,9 @@ import {
   resetQuestionState,
   resetAllPlayers,
   selectPlayersMap,
-  selectCurrentPlayer
+  selectCurrentPlayer,
+  setCurrentPlayer,
+  togglePlayerReady
 } from './features/player/playersSlice';
 import PlayerJoin from './features/player/PlayerJoin';
 import PlayerLobby from './features/player/PlayerLobby';
@@ -117,6 +119,21 @@ export default function App() {
     return () => unsubscribe();
   }, [gamePin, dispatch, appMode, gameStatus, game.quiz, game.currentQuestionIndex, game.timeRemaining, game.isTimerActive, playersMap]);
 
+  // 1b. Auto-reconnect player if session exists in localStorage and matches queryPin
+  useEffect(() => {
+    if (queryPin) {
+      const savedPin = localStorage.getItem('quiz_battle_game_pin');
+      const savedPlayerId = localStorage.getItem('quiz_battle_player_id');
+      
+      if (savedPin === queryPin && savedPlayerId) {
+        // Restore player ID in Redux
+        dispatch(setCurrentPlayer(savedPlayerId));
+        // Set gamePin in Redux to trigger subscription
+        dispatch(updateGameFromSync({ gamePin: queryPin }));
+      }
+    }
+  }, [queryPin, dispatch]);
+
   // Helper to publish Redux state updates to real-time sync channel
   const syncToCloud = (extraPayload = {}) => {
     if (!gamePin) return;
@@ -195,7 +212,13 @@ export default function App() {
   // --- PLAYER ACTIONS ---
   const handlePlayerJoined = (enteredPin, playerData) => {
     dispatch(addPlayer(playerData));
-    dispatch(setGameSession({ gamePin: enteredPin }));
+    
+    // Save player ID and PIN to localStorage for session persistence
+    localStorage.setItem('quiz_battle_player_id', playerData.id);
+    localStorage.setItem('quiz_battle_game_pin', enteredPin);
+    
+    // Dispatch gamePin to Redux so player starts syncing immediately
+    dispatch(updateGameFromSync({ gamePin: enteredPin }));
     
     // Publish PLAYER_JOINED event to cloud pub/sub channel
     publishGameSync(enteredPin, {
@@ -210,6 +233,23 @@ export default function App() {
     setTimeout(() => {
       syncToCloud();
     }, 100);
+  };
+
+  const handlePlayerToggleReady = () => {
+    if (currentPlayer && gamePin) {
+      const updatedPlayers = {
+        ...playersMap,
+        [currentPlayer.id]: {
+          ...playersMap[currentPlayer.id],
+          isReady: !playersMap[currentPlayer.id]?.isReady
+        }
+      };
+      
+      // Toggle locally
+      dispatch(togglePlayerReady(currentPlayer.id));
+      // Publish to cloud
+      publishGameSync(gamePin, { playersMap: updatedPlayers });
+    }
   };
 
   // --- QUICK DEMO MULTI-TAB LAUNCHER ---
@@ -319,7 +359,7 @@ export default function App() {
             ) : (
               <>
                 {gameStatus === 'LOBBY' && (
-                  <PlayerLobby gamePin={gamePin} />
+                  <PlayerLobby gamePin={gamePin} onToggleReady={handlePlayerToggleReady} />
                 )}
 
                 {gameStatus === 'QUESTION' && (
@@ -333,6 +373,9 @@ export default function App() {
                 {gameStatus === 'PODIUM' && (
                   <PlayerPodium
                     onPlayAgain={() => {
+                      // Clear player session on game exit / restart
+                      localStorage.removeItem('quiz_battle_player_id');
+                      localStorage.removeItem('quiz_battle_game_pin');
                       dispatch(resetAllPlayers());
                       window.location.href = window.location.pathname;
                     }}
